@@ -3,6 +3,7 @@ using Recondicionamento_DTC_Routers.Infra;
 using Recondicionamento_DTC_Routers.Services;
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,7 +26,7 @@ namespace Recondicionamento_DTC_Routers.Workflow
         public Action<string, string> ShowWarn { get; set; }
 
         // Workflow hooks (null => SKIP)
-        public Func<CancellationToken, Task> VerifyTestSetupAsync { get; set; } // opcional (se não usares, mete null)
+        public Func<CancellationToken, Task> VerifyTestSetupAsync { get; set; } // opcional
         public Func<Task> AskSwapDtcAsync { get; set; }
 
         public Func<CancellationToken, Task<string>> DetectFabricanteAsync { get; set; }
@@ -33,14 +34,13 @@ namespace Recondicionamento_DTC_Routers.Workflow
         public Func<string, CancellationToken, Task<string>> GetFirmwareAsync { get; set; }
 
         public Func<string, string> GetExpectedFirmware { get; set; } // pode devolver "" se não tiveres mapping
-        public Func<string, CancellationToken, Task> DoUpgradeFirmwareAsync { get; set; } // opcional
+        public Func<string, CancellationToken, Task> DoUpgradeFirmwareAsync { get; set; } // manual/auto
 
-        public Func<string, string, CancellationToken, Task> DoUploadConfigAsync { get; set; } // opcional
+        public Func<string, string, CancellationToken, Task> DoUploadConfigAsync { get; set; }
+        public Func<string, string, CancellationToken, Task<bool>> TestAnalogInputsAsync { get; set; }
+        public Func<string, string, CancellationToken, Task<bool>> TestEmiPlcAsync { get; set; }
 
-        public Func<string, string, CancellationToken, Task<bool>> TestAnalogInputsAsync { get; set; } // S01 DTC
-        public Func<string, string, CancellationToken, Task<bool>> TestEmiPlcAsync { get; set; }       // S01 EMI
-
-        public Action<DtcRecord> AddToReport { get; set; } // opcional
+        public Action<DtcRecord> AddToReport { get; set; }
 
         public async Task<DtcRecord> RunAsync(CancellationToken ct)
         {
@@ -48,232 +48,323 @@ namespace Recondicionamento_DTC_Routers.Workflow
 
             var r = new DtcRecord
             {
-                ConfigUploaded = true,  // se um passo for SKIP, não queremos bloquear conformidade
+                ConfigUploaded = true,  // SKIP não bloqueia
                 AnalogOk = true,
                 EmiPlcOk = true,
                 ConformidadeFinal = false
             };
 
-            await _log.LogAsync("DTC workflow started.");
+            await _log.LogAsync("=== INÍCIO WORKFLOW DTC ===");
 
-            // (Opcional) Step 0: setup
-            if (VerifyTestSetupAsync != null)
+            // (Opcional) 0) setup
+            await RunStepMaybeSkipAsync(0, "Validar setup", ct, async () =>
             {
-                await RunStepAsync(0, "Validar setup", async () =>
-                {
-                    await VerifyTestSetupAsync(ct);
-                }, ct);
-            }
+                if (VerifyTestSetupAsync == null)
+                    throw new StepSkippedException("VerifyTestSetupAsync não definido (SKIP).");
+
+                await VerifyTestSetupAsync(ct);
+            });
 
             // 1) Manual swap
-            await RunStepAsync(1, "Substituir DTC no setup (manual)", async () =>
+            await RunStepAsync(1, "Substituir DTC no setup (manual)", ct, async () =>
             {
-                if (AskSwapDtcAsync == null) throw new InvalidOperationException("AskSwapDtcAsync não definido.");
-                await AskSwapDtcAsync();
-            }, ct);
+                if (AskSwapDtcAsync == null)
+                    throw new InvalidOperationException("AskSwapDtcAsync não definido.");
 
-            // 2) Detect fabricante
-            await RunStepAsync(2, "Detetar fabricante (HTTP/HTTPS)", async () =>
+                await AskSwapDtcAsync();
+            });
+
+            // 2) Fabricante
+            await RunStepAsync(2, "Detetar fabricante (HTTP/HTTPS)", ct, async () =>
             {
-                if (DetectFabricanteAsync == null) throw new InvalidOperationException("DetectFabricanteAsync não definido.");
+                if (DetectFabricanteAsync == null)
+                    throw new InvalidOperationException("DetectFabricanteAsync não definido.");
+
                 r.Fabricante = (await DetectFabricanteAsync(ct))?.Trim();
                 if (string.IsNullOrWhiteSpace(r.Fabricante)) r.Fabricante = "UNKNOWN";
+
                 SetDetail(2, r.Fabricante);
                 await _log.LogAsync($"Fabricante: {r.Fabricante}");
-            }, ct);
+            });
 
-            // 3) Ler ID/Serial
-            await RunStepAsync(3, "Ler ID/Serial DTC (web)", async () =>
+            // 3) ID/Serial
+            await RunStepAsync(3, "Ler ID/Serial DTC (web)", ct, async () =>
             {
-                if (GetDtcIdAsync == null) throw new InvalidOperationException("GetDtcIdAsync não definido.");
-                r.NumeroSerie = (await GetDtcIdAsync(r.Fabricante, ct))?.Trim();
-                SetDetail(3, r.NumeroSerie ?? "");
+                if (GetDtcIdAsync == null)
+                    throw new InvalidOperationException("GetDtcIdAsync não definido.");
+
+                r.NumeroSerie = (await GetDtcIdAsync(r.Fabricante, ct))?.Trim() ?? "";
+                SetDetail(3, r.NumeroSerie);
                 await _log.LogAsync($"ID/Serial: {r.NumeroSerie}");
-            }, ct);
+            });
 
-            // 4) Ler FW atual
-            await RunStepAsync(4, "Ler FW atual", async () =>
+            // 4) FW atual
+            await RunStepAsync(4, "Ler FW atual", ct, async () =>
             {
-                if (GetFirmwareAsync == null) throw new InvalidOperationException("GetFirmwareAsync não definido.");
-                r.FirmwareOld = (await GetFirmwareAsync(r.Fabricante, ct))?.Trim();
-                SetDetail(4, r.FirmwareOld ?? "");
+                if (GetFirmwareAsync == null)
+                    throw new InvalidOperationException("GetFirmwareAsync não definido.");
+
+                r.FirmwareOld = (await GetFirmwareAsync(r.Fabricante, ct))?.Trim() ?? "";
+                SetDetail(4, string.IsNullOrWhiteSpace(r.FirmwareOld) ? "vazio" : r.FirmwareOld);
                 await _log.LogAsync($"FW old: {r.FirmwareOld}");
-            }, ct);
+            });
 
-            // 5) Upgrade FW (se necessário)
-            await RunStepMaybeSkipAsync(5, "Upgrade FW (se necessário)", async () =>
+            // 5) Upgrade FW (manual/auto)
+            await RunStepMaybeSkipAsync(5, "Upgrade FW (se necessário)", ct, async () =>
             {
-                var expected = GetExpectedFirmware?.Invoke(r.Fabricante) ?? "";
-                expected = expected.Trim();
+                string expected = (GetExpectedFirmware?.Invoke(r.Fabricante) ?? "").Trim();
 
                 if (string.IsNullOrWhiteSpace(expected))
+                    throw new StepSkippedException("Sem firmware esperado (mapping vazio).");
+
+                // se não conseguiu ler FW, pergunta se quer tentar (manual)
+                if (string.IsNullOrWhiteSpace(r.FirmwareOld))
                 {
-                    // Sem mapping -> SKIP
-                    throw new SkipStepException("Sem firmware esperado (mapping vazio).");
+                    bool tentar = AskYesNo?.Invoke(
+                        "Firmware DTC",
+                        $"FW atual: (desconhecido)\nFW esperado: {expected}\n\nQueres tentar executar upgrade de firmware?",
+                        true) ?? false;
+
+                    if (!tentar)
+                        throw new StepSkippedException("Decisão: não tentar upgrade (FW atual desconhecido).");
+                }
+                else
+                {
+                    // já está ok?
+                    if (string.Equals(r.FirmwareOld, expected, StringComparison.OrdinalIgnoreCase))
+                    {
+                        r.FirmwareNew = r.FirmwareOld;
+                        throw new StepSkippedException("FW já é o esperado.");
+                    }
+
+                    // pergunta se queres mesmo fazer upgrade
+                    bool fazer = AskYesNo?.Invoke(
+                        "Firmware DTC",
+                        $"FW atual: {r.FirmwareOld}\nFW esperado: {expected}\n\nQueres fazer upgrade de firmware agora?",
+                        false) ?? false;
+
+                    if (!fazer)
+                    {
+                        r.FirmwareNew = r.FirmwareOld;
+                        throw new StepSkippedException("Decisão: SKIP upgrade.");
+                    }
                 }
 
-                // Se já está OK -> SKIP
-                if (string.Equals(r.FirmwareOld ?? "", expected, StringComparison.OrdinalIgnoreCase))
-                {
-                    r.FirmwareNew = r.FirmwareOld;
-                    throw new SkipStepException("FW já é o esperado.");
-                }
-
-                // Precisa upgrade
                 if (DoUpgradeFirmwareAsync == null)
                     throw new InvalidOperationException($"Precisa upgrade para {expected} mas DoUpgradeFirmwareAsync é null.");
 
+                await _log.LogAsync("A executar upgrade (manual/auto)...");
                 await DoUpgradeFirmwareAsync(r.Fabricante, ct);
-                r.FirmwareNew = expected;
-                SetDetail(5, $"OK -> {expected}");
-                await _log.LogAsync($"FW upgrade -> {expected}");
-            }, ct);
 
-            // Se não houve upgrade, define FW new = old (para report)
+                // Após upgrade: re-lê FW (isto resolve o teu “não lê antes/depois”)
+                if (GetFirmwareAsync != null)
+                    r.FirmwareNew = (await GetFirmwareAsync(r.Fabricante, ct))?.Trim() ?? "";
+                else
+                    r.FirmwareNew = expected;
+
+                SetDetail(5, $"OK -> {r.FirmwareNew}");
+
+                // valida se bate no esperado (se não bater, falha o passo)
+                if (!string.IsNullOrWhiteSpace(expected) &&
+                    !string.Equals(r.FirmwareNew ?? "", expected, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new Exception($"FW após upgrade ({r.FirmwareNew}) != esperado ({expected})");
+                }
+
+                await _log.LogAsync($"FW upgrade OK -> {r.FirmwareNew}");
+            },
+            onSkip: () =>
+            {
+                // se skip e ainda não tens firmwareNew, alinha
+                if (string.IsNullOrWhiteSpace(r.FirmwareNew))
+                    r.FirmwareNew = r.FirmwareOld;
+            },
+            onFail: () =>
+            {
+                // se falha e firmwareNew vazio, ao menos guarda o old
+                if (string.IsNullOrWhiteSpace(r.FirmwareNew))
+                    r.FirmwareNew = r.FirmwareOld;
+            });
+
+            // garante sempre FW New preenchido para report
             if (string.IsNullOrWhiteSpace(r.FirmwareNew))
                 r.FirmwareNew = r.FirmwareOld;
 
-            // 6) Upload configurações
-            await RunStepMaybeSkipAsync(6, "Upload configurações (E-REDES)", async () =>
+            // 6) Upload config
+            await RunStepMaybeSkipAsync(6, "Upload configurações (E-REDES)", ct, async () =>
             {
                 if (DoUploadConfigAsync == null)
-                    throw new SkipStepException("DoUploadConfigAsync não definido (SKIP).");
+                    throw new StepSkippedException("DoUploadConfigAsync não definido (SKIP).");
 
                 await DoUploadConfigAsync(r.Fabricante, r.NumeroSerie, ct);
                 r.ConfigUploaded = true;
                 SetDetail(6, "OK");
                 await _log.LogAsync("Upload config OK");
-            }, ct,
+            },
             onFail: () => r.ConfigUploaded = false,
             onSkip: () => r.ConfigUploaded = true);
 
-            // 7) S01 DTC (tensões/correntes)
-            await RunStepMaybeSkipAsync(7, "S01 DTC: Tensões/Correntes (WS)", async () =>
+            // 7) S01 DTC
+            await RunStepMaybeSkipAsync(7, "S01 DTC: Tensões/Correntes (WS)", ct, async () =>
             {
                 if (TestAnalogInputsAsync == null)
-                    throw new SkipStepException("TestAnalogInputsAsync não definido (SKIP).");
+                    throw new StepSkippedException("TestAnalogInputsAsync não definido (SKIP).");
 
                 bool ok = await TestAnalogInputsAsync(r.Fabricante, r.NumeroSerie, ct);
                 r.AnalogOk = ok;
                 SetDetail(7, ok ? "OK" : "FAIL");
                 await _log.LogAsync($"S01(DTC) -> {ok}");
+
                 if (!ok) throw new Exception("S01(DTC) FAIL");
-            }, ct,
+            },
             onFail: () => r.AnalogOk = false,
             onSkip: () => r.AnalogOk = true);
 
-            // 8) S01 EMI PLC
-            await RunStepMaybeSkipAsync(8, "S01 EMI PLC: Instantâneos (WS)", async () =>
+            // 8) S01 EMI
+            await RunStepMaybeSkipAsync(8, "S01 EMI PLC: Instantâneos (WS)", ct, async () =>
             {
                 if (TestEmiPlcAsync == null)
-                    throw new SkipStepException("TestEmiPlcAsync não definido (SKIP).");
+                    throw new StepSkippedException("TestEmiPlcAsync não definido (SKIP).");
 
                 bool ok = await TestEmiPlcAsync(r.Fabricante, r.NumeroSerie, ct);
                 r.EmiPlcOk = ok;
                 SetDetail(8, ok ? "OK" : "FAIL");
                 await _log.LogAsync($"S01(EMI) -> {ok}");
+
                 if (!ok) throw new Exception("S01(EMI) FAIL");
-            }, ct,
+            },
             onFail: () => r.EmiPlcOk = false,
             onSkip: () => r.EmiPlcOk = true);
 
             // 9) Report
-            await RunStepMaybeSkipAsync(9, "Adicionar ao report", () =>
+            await RunStepMaybeSkipAsync(9, "Adicionar ao report", ct, () =>
             {
                 if (AddToReport == null)
-                    throw new SkipStepException("AddToReport não definido (SKIP).");
+                    throw new StepSkippedException("AddToReport não definido (SKIP).");
 
                 AddToReport(r);
                 SetDetail(9, "OK");
                 return Task.CompletedTask;
-            }, ct);
+            });
 
-            // conformidade final
+            // conformidade final (FW só conta se houver expected)
             string expectedFw = (GetExpectedFirmware?.Invoke(r.Fabricante) ?? "").Trim();
             bool fwOk = string.IsNullOrWhiteSpace(expectedFw)
-                        || string.Equals(r.FirmwareNew ?? r.FirmwareOld ?? "", expectedFw, StringComparison.OrdinalIgnoreCase);
+                        || string.Equals((r.FirmwareNew ?? r.FirmwareOld ?? "").Trim(), expectedFw, StringComparison.OrdinalIgnoreCase);
 
             r.ConformidadeFinal = r.ConfigUploaded && r.AnalogOk && r.EmiPlcOk && fwOk;
 
-            await _log.LogAsync($"Workflow finished. ConformidadeFinal={r.ConformidadeFinal}");
+            await _log.LogAsync($"=== FIM WORKFLOW DTC | Conformidade: {(r.ConformidadeFinal ? "CONFORME" : "NÃO CONFORME")} ===");
             return r;
         }
 
-        // ---------------- helpers ----------------
+        // ---------------- Step runners ----------------
 
-        private async Task RunStepAsync(int order, string name, Func<Task> body, CancellationToken ct)
+        private async Task RunStepAsync(int order, string name, CancellationToken ct, Func<Task> action)
         {
-            var step = FindStep(order, name);
-            SetStep(step, StepStatus.Running, "");
+            ct.ThrowIfCancellationRequested();
+
+            var step = _steps.FirstOrDefault(s => s.Order == order);
+            if (step == null) return;
+
+            step.Status = StepStatus.Running;
+            step.Detail = "";
+
+            await _log.LogAsync($"[{order:00}] {name} - START");
 
             try
             {
-                ct.ThrowIfCancellationRequested();
-                await body();
-                SetStep(step, StepStatus.Ok, step.Detail);
+                await action();
+
+                // se ninguém mexeu no status dentro do action, fica OK
+                if (step.Status == StepStatus.Running)
+                    step.Status = StepStatus.Ok;
+
+                await _log.LogAsync($"[{order:00}] {name} - {step.Status}");
             }
-            catch
+            catch (OperationCanceledException)
             {
-                SetStep(step, StepStatus.Fail, step.Detail);
-                throw;
+                step.Status = StepStatus.Skipped;
+                step.Detail = "CANCEL";
+                await _log.LogAsync($"[{order:00}] {name} - CANCEL");
+                throw; // cancel aborta
+            }
+            catch (StepSkippedException ex)
+            {
+                step.Status = StepStatus.Skipped;
+                step.Detail = ex.Message;
+                await _log.LogAsync($"[{order:00}] {name} - SKIP: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                step.Status = StepStatus.Fail;
+                step.Detail = ex.Message;
+                await _log.LogAsync($"[{order:00}] {name} - FAIL: {ex.Message}");
+                // NÃO faz throw -> continua
             }
         }
 
-        private async Task RunStepMaybeSkipAsync(int order, string name, Func<Task> body, CancellationToken ct,
+        private async Task RunStepMaybeSkipAsync(int order, string name, CancellationToken ct, Func<Task> body,
             Action onFail = null, Action onSkip = null)
         {
-            var step = FindStep(order, name);
-            SetStep(step, StepStatus.Running, "");
+            ct.ThrowIfCancellationRequested();
+
+            var step = _steps.FirstOrDefault(s => s.Order == order);
+            if (step == null)
+            {
+                // se não existir (ex. step 0), cria
+                step = new StepVm(order, name);
+                _steps.Add(step);
+            }
+
+            step.Status = StepStatus.Running;
+            if (step.Detail == null) step.Detail = "";
+
+            await _log.LogAsync($"[{order:00}] {name} - START");
 
             try
             {
-                ct.ThrowIfCancellationRequested();
                 await body();
-                SetStep(step, StepStatus.Ok, step.Detail);
+
+                // se body não alterou status, fica OK
+                if (step.Status == StepStatus.Running)
+                    step.Status = StepStatus.Ok;
+
+                await _log.LogAsync($"[{order:00}] {name} - {step.Status}");
             }
-            catch (SkipStepException ex)
+            catch (OperationCanceledException)
             {
-                onSkip?.Invoke();
-                SetStep(step, StepStatus.Skipped, ex.Message);
-            }
-            catch
-            {
-                onFail?.Invoke();
-                SetStep(step, StepStatus.Fail, step.Detail);
+                step.Status = StepStatus.Skipped;
+                step.Detail = "CANCEL";
+                await _log.LogAsync($"[{order:00}] {name} - CANCEL");
                 throw;
             }
-        }
-
-        private StepVm FindStep(int order, string fallbackName)
-        {
-            foreach (var s in _steps)
-                if (s.Order == order) return s;
-
-            // se não existir (por exemplo Step 0), cria um “fantasma”
-            var vm = new StepVm(order, fallbackName);
-            _steps.Add(vm);
-            return vm;
-        }
-
-        private void SetStep(StepVm s, StepStatus st, string detail)
-        {
-            s.Status = st;
-            if (detail != null) s.Detail = detail;
+            catch (StepSkippedException ex)
+            {
+                onSkip?.Invoke();
+                step.Status = StepStatus.Skipped;
+                step.Detail = ex.Message;
+                await _log.LogAsync($"[{order:00}] {name} - SKIP: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                onFail?.Invoke();
+                step.Status = StepStatus.Fail;
+                step.Detail = ex.Message;
+                await _log.LogAsync($"[{order:00}] {name} - FAIL: {ex.Message}");
+                // ✅ NÃO throw -> continua workflow
+            }
         }
 
         private void SetDetail(int order, string detail)
         {
-            foreach (var s in _steps)
-                if (s.Order == order)
-                {
-                    s.Detail = detail ?? "";
-                    return;
-                }
+            var s = _steps.FirstOrDefault(x => x.Order == order);
+            if (s != null) s.Detail = detail ?? "";
         }
 
-        private sealed class SkipStepException : Exception
+        private sealed class StepSkippedException : Exception
         {
-            public SkipStepException(string msg) : base(msg) { }
+            public StepSkippedException(string msg) : base(msg) { }
         }
     }
 }

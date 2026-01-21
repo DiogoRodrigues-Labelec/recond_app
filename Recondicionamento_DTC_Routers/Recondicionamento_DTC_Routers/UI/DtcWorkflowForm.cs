@@ -1,5 +1,10 @@
 ﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Support.UI;
+using Recondicionamento_DTC_Routers.Domain;
+using Recondicionamento_DTC_Routers.helpers;
+using Recondicionamento_DTC_Routers.Infra;
+using Recondicionamento_DTC_Routers.Workflow;
 using System;
 using System.ComponentModel;
 using System.Drawing;
@@ -9,10 +14,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Recondicionamento_DTC_Routers.Domain;
-using Recondicionamento_DTC_Routers.Workflow;
-using Recondicionamento_DTC_Routers.Infra;
-using Recondicionamento_DTC_Routers.helpers;
+using static Recondicionamento_DTC_Routers.Workflow.RouterWorkflowRunner;
 
 namespace Recondicionamento_DTC_Routers.UI
 {
@@ -372,11 +374,13 @@ namespace Recondicionamento_DTC_Routers.UI
                 GetFirmwareAsync = async (fab, ct) =>
                     (await GetFwDtcAsync(fab, ct)) ?? "",
 
-                // 5) Firmware esperado (se ainda não tens mapping, devolve "")
-                GetExpectedFirmware = (fab) => "",
+                // 5) Firmware esperado
+                GetExpectedFirmware = (fab) => GetExpectedFwDtc(fab),
 
-                // 5) Upgrade: mete null para SKIP (quando implementares, ligas aqui)
-                DoUpgradeFirmwareAsync = null,
+                // 5) Upgrade: manual (popup)
+                DoUpgradeFirmwareAsync = async (fab, ct) =>
+                    await UpgradeFwDtcManualAsync(fab, ct),
+
 
                 // 6) Upload Config (AQUI é onde entra o ZIV/CIRCUTOR)
                 DoUploadConfigAsync = async (fab, id, ct) =>
@@ -645,81 +649,109 @@ namespace Recondicionamento_DTC_Routers.UI
             return elemento.Text ?? "";
         }, ct);
 
-        private async Task<string> GetFwDtcAsync(string fabricante, CancellationToken ct)
-        {
-            // Faz igual ao Router: selenium -> login -> ler FW num elemento.
-            // Eu deixo stub para não inventar XPath.
-            await _logger.LogAsync($"GetFwDtcAsync: leitura FW ainda não implementada ({fabricante}).", toFile: true);
-            return "";
-        }
 
         private async Task UploadConfig_ZivDtcAsync(string configPath, CancellationToken ct)
         {
-            TimeSpan commandTimeout = TimeSpan.FromMinutes(3);
-
-            if (string.IsNullOrWhiteSpace(configPath))
-                throw new ArgumentException("configPath vazio", nameof(configPath));
-
-            if (!File.Exists(configPath))
-                throw new FileNotFoundException("Ficheiro de configuração não existe.", configPath);
+            if (string.IsNullOrWhiteSpace(configPath)) throw new ArgumentException(nameof(configPath));
+            if (!File.Exists(configPath)) throw new FileNotFoundException("Ficheiro não existe.", configPath);
 
             var service = ChromeDriverService.CreateDefaultService();
             service.HideCommandPromptWindow = true;
 
             var options = new ChromeOptions();
-            // se precisares:
             options.AddArgument("--ignore-certificate-errors");
             options.AddArgument("--disable-gpu");
             options.AddArgument("--no-sandbox");
 
-            using IWebDriver driver = new ChromeDriver(service, options, commandTimeout);
-
-            try
+            // (Opcional mas recomendado no WinForms) não congelar UI
+            await Task.Run(async () =>
             {
-                ct.ThrowIfCancellationRequested();
+                using var driver = new ChromeDriver(service, options);
+                var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(20));
 
-                string url = "http://" + Configuration.configurationValues.ip + ":" + Configuration.configurationValues.dtcPort;
-                driver.Navigate().GoToUrl(url);
-                await Delay(1000, ct);
+                string baseUrl = $"http://{Configuration.configurationValues.ip}:{Configuration.configurationValues.dtcPort}/";
+                driver.Navigate().GoToUrl(baseUrl);
 
-                // Login (assumindo igual ZIV)
-                driver.FindElement(By.XPath("/html/body/div[2]/div/form/table/tbody/tr[1]/td[3]/input"))
-                      .SendKeys(Configuration.configurationValues.dtcUser);
-                await Delay(200, ct);
+                TryLoginIfNeeded(driver, wait);
 
-                driver.FindElement(By.XPath("/html/body/div[2]/div/form/table/tbody/tr[2]/td[3]/input"))
-                      .SendKeys(Configuration.configurationValues.dtcPass);
-                await Delay(200, ct);
+                ClickConfigFiles(driver, wait);
 
-                driver.FindElement(By.XPath("/html/body/div[2]/div/form/div/input")).Click();
-                await Delay(1200, ct);
+                var fileInput = wait.Until(d => d.FindElement(By.CssSelector("input[type='file']")));
+                fileInput.SendKeys(configPath);
 
-                // ⚠️ Atenção: estes XPaths podem diferir no DTC.
-                // Se for igual ao router, funciona. Se não, ajustas aqui.
+                // Only verify (se existir)
+                var onlyVerify = TryFind(driver, By.CssSelector("input[type='checkbox']"));
+                if (onlyVerify != null && onlyVerify.Selected)
+                    onlyVerify.Click();
 
-                driver.FindElement(By.XPath("/html/body/table[2]/tbody/tr/td[1]/table/tbody/tr[3]/td/table/tbody/tr/td/table/tbody/tr[6]/td"))
-                      .Click();
-                await Delay(300, ct);
+                // Botão Upload configuration (no print é um <input value="Upload configuration">)
+                var uploadBtn = wait.Until(d =>
+                    TryFind(d, By.XPath("//input[@type='submit' and contains(@value,'Upload')]")) ??
+                    TryFind(d, By.XPath("//button[contains(.,'Upload')]"))
+                );
 
-                driver.FindElement(By.XPath("/html/body/table[2]/tbody/tr/td[2]/table/tbody/tr/td[2]/form/p[1]/input"))
-                      .SendKeys(configPath);
-                await Delay(300, ct);
+                uploadBtn.Click();
 
-                driver.FindElement(By.XPath("/html/body/table[2]/tbody/tr/td[2]/table/tbody/tr/td[2]/form/p[4]/input")).Click();
-                await Delay(20_000, ct);
+                // Aqui é o que disseste: "carregar em upload e esperar uns minutos"
+                // (sem inventar parsing)
+                await Task.Delay(TimeSpan.FromMinutes(2), ct);
 
-                driver.FindElement(By.XPath("/html/body/table[2]/tbody/tr/td[2]/table/tbody/tr/td[2]/form/table/tbody/tr/td[1]/input")).Click();
-                await Delay(30_000, ct);
+            }, ct);
 
-                await _logger.LogAsync($"Config DTC ZIV enviada: {Path.GetFileName(configPath)}", toFile: true);
-            }
-            catch (Exception ex)
-            {
-                await _logger.LogAsync($"UploadConfig DTC ZIV erro: {ex.Message}", toFile: true);
-                throw;
-            }
+            await _logger.LogAsync($"Config DTC ZIV enviada: {Path.GetFileName(configPath)}", toFile: true);
         }
 
+        private static void TryLoginIfNeeded(IWebDriver driver, WebDriverWait wait)
+        {
+            // Só faz login se houver password box (evita confundir com 'Hostname' etc.)
+            var passBox = TryFind(driver, By.CssSelector("input[type='password']"));
+            if (passBox == null) return;
+
+            // tenta achar o username no mesmo form
+            var form = passBox.FindElement(By.XPath("./ancestor::form[1]"));
+            var userBox =
+                TryFind(form, By.CssSelector("input[type='text']")) ??
+                TryFind(form, By.XPath(".//input[not(@type) or @type='text' or @type='username']"));
+
+            if (userBox == null) return;
+
+            userBox.Clear();
+            userBox.SendKeys(Configuration.configurationValues.dtcUser);
+
+            passBox.Clear();
+            passBox.SendKeys(Configuration.configurationValues.dtcPass);
+
+            var btn =
+                TryFind(form, By.CssSelector("input[type='submit']")) ??
+                TryFind(form, By.XPath(".//input[@type='button' or @type='submit'] | .//button"));
+
+            btn?.Click();
+
+            // espera carregar página seguinte (menu aparecer / DOM crescer)
+            wait.Until(d => d.PageSource.Length > 2000);
+        }
+
+        private static void ClickConfigFiles(IWebDriver driver, WebDriverWait wait)
+        {
+            // No layout do DTC aparece mesmo como "Configuration files" no menu da esquerda
+            var link =
+                TryFind(driver, By.LinkText("Configuration files")) ??
+                TryFind(driver, By.XPath("//a[normalize-space()='Configuration files']")) ??
+                TryFind(driver, By.XPath("//a[contains(.,'Configuration files')]"));
+
+            if (link == null)
+                throw new Exception("Não encontrei o link 'Configuration files' no menu.");
+
+            link.Click();
+
+            // espera aparecer o input file
+            wait.Until(d => d.FindElements(By.CssSelector("input[type='file']")).Count > 0);
+        }
+
+        private static IWebElement TryFind(ISearchContext ctx, By by)
+        {
+            try { return ctx.FindElement(by); } catch { return null; }
+        }
         private Task UploadConfig_CircutorDtcAsync(string configPath, CancellationToken ct)
         {
             throw new NotImplementedException("Upload config CIRCUTOR ainda não implementado (ajustar XPaths/flow).");
@@ -780,8 +812,168 @@ namespace Recondicionamento_DTC_Routers.UI
             return "";
         }
 
+
+        private async Task<string> GetFwDtcAsync(string fabricante, CancellationToken ct)
+        {
+            try
+            {
+                if (string.Equals(fabricante, "ZIV", StringComparison.OrdinalIgnoreCase))
+                    return await GetFw_ZivDtcAsync(ct);
+
+                // se quiseres implementar outros depois:
+                // if (string.Equals(fabricante, "CIRCUTOR", StringComparison.OrdinalIgnoreCase))
+                //     return await GetFw_CircutorDtcAsync(ct);
+
+                await _logger.LogAsync($"GetFwDtcAsync: fabricante '{fabricante}' não implementado.", toFile: true);
+                return "";
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogAsync($"GetFwDtcAsync erro ({fabricante}): {ex.Message}", toFile: true);
+                return "";
+            }
+        }
+
+        private Task<string> GetFw_ZivDtcAsync(CancellationToken ct) => Task.Run(() =>
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var service = ChromeDriverService.CreateDefaultService();
+            service.HideCommandPromptWindow = true;
+
+            var options = new ChromeOptions();
+            options.AddArgument("--ignore-certificate-errors");
+            options.AddArgument("--disable-gpu");
+            options.AddArgument("--no-sandbox");
+
+            using IWebDriver driver = new ChromeDriver(service, options);
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(20));
+
+            string baseUrl = $"http://{Configuration.configurationValues.ip}:{Configuration.configurationValues.dtcPort}/";
+            driver.Navigate().GoToUrl(baseUrl);
+
+            // login se necessário
+            TryLoginIfNeeded(driver, wait);
+
+            // na página “Identification” tens:
+            // Firmware version  <valor>
+            // Vamos procurar pelo label, para não depender de layout fixo
+            string fw = ReadValueByLabel(driver, wait,
+                "Firmware version",
+                "Firmware Version",
+                "Firmware");
+
+            return fw?.Trim() ?? "";
+        }, ct);
+
+        private static string GetExpectedFwDtc(string fabricante)
+        {
+            // mete aqui o mapping quando quiseres.
+            // Se não souberes, devolve "" e o runner vai perguntar.
+            var map = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                // Exemplo (da tua imagem):
+                ["ZIV"] = "3.23.99.1.baac1e69",
+
+                // ["CIRCUTOR"] = "x.y.z",
+            };
+
+            return map.TryGetValue(fabricante ?? "", out var v) ? (v ?? "") : "";
+        }
+
+        private async Task UpgradeFwDtcManualAsync(string fabricante, CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            bool fazer = AskYesNoLocal(
+                "Upgrade FW (DTC)",
+                $"Fabricante: {fabricante}\n\nQueres fazer upgrade de firmware agora?\n\nYes = vou fazer upgrade (manual)\nNo = skip",
+                defaultYes: false
+            );
+
+            if (!fazer)
+                throw new StepSkippedException("SKIP (decisão do utilizador).");  // ✅ em vez de return
+
+            var res = MessageBox.Show(
+                this,
+                "Faz o upgrade de firmware no DTC (manual).\n\nQuando terminares, clica OK.\nCancel = cancelar o sequencial.",
+                "Upgrade FW (manual)",
+                MessageBoxButtons.OKCancel,
+                MessageBoxIcon.Information
+            );
+
+            if (res != DialogResult.OK)
+                throw new OperationCanceledException();
+
+            await _logger.LogAsync("A aguardar DTC voltar a responder por HTTP...", toFile: true);
+
+            string baseUrl = $"http://{Configuration.configurationValues.ip}:{Configuration.configurationValues.dtcPort}/";
+            await WaitHttpUpAsync(baseUrl, timeoutSeconds: 480, ct);
+
+            await _logger.LogAsync("DTC voltou a responder por HTTP após upgrade.", toFile: true);
+        }
+
+        private static async Task WaitHttpUpAsync(string url, int timeoutSeconds, CancellationToken ct)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+
+            // pequeno “delay” inicial para evitar martelar logo no reboot
+            await Task.Delay(5000, ct);
+
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
+
+            while (DateTime.UtcNow < deadline)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                try
+                {
+                    using var resp = await http.GetAsync(url, ct);
+                    if ((int)resp.StatusCode >= 200 && (int)resp.StatusCode < 500)
+                        return; // está “up” (mesmo que peça login)
+                }
+                catch
+                {
+                    // ignora e tenta novamente
+                }
+
+                await Task.Delay(2000, ct);
+            }
+
+            throw new Exception($"Timeout: DTC não voltou por HTTP em {timeoutSeconds}s.");
+        }
+
+        private static string ReadValueByLabel(IWebDriver driver, WebDriverWait wait, params string[] labels)
+        {
+            wait.Until(d => d.PageSource.Length > 2000);
+
+            foreach (var label in labels)
+            {
+                if (string.IsNullOrWhiteSpace(label)) continue;
+
+                // tenta estrutura típica: <td>Firmware version</td><td>VALOR</td>
+                var el =
+                    TryFind(driver, By.XPath($"//td[normalize-space()='{label}']/following-sibling::td[1]")) ??
+                    TryFind(driver, By.XPath($"//th[normalize-space()='{label}']/following-sibling::td[1]")) ??
+                    TryFind(driver, By.XPath($"//*[normalize-space()='{label}']/following-sibling::*[1]"));
+
+                if (el != null)
+                {
+                    var txt = (el.Text ?? "").Trim();
+                    if (!string.IsNullOrWhiteSpace(txt))
+                        return txt;
+                }
+            }
+
+            return "";
+        }
+
+
         #endregion
     }
+
+
+
 
     // ============================================================================================
     // Report HTML DTC (create/append)

@@ -1067,3 +1067,663 @@ UploadConfig DTC ZIV erro: no such element: Unable to locate element: {"method":
 Erro: no such element: Unable to locate element: {"method":"xpath","selector":"/html/body/table[2]/tbody/tr/td[2]/table/tbody/tr/td[2]/form/p[1]/input"}
   (Session info: chrome=143.0.7499.193); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#nosuchelementexception
 
+
+====================
+2026-01-21 10:46:15
+====================
+DTC workflow started.
+
+
+====================
+2026-01-21 10:46:17
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-21 10:46:17
+====================
+Fabricante: ZIV
+
+
+====================
+2026-01-21 10:46:23
+====================
+ID/Serial: ZIV1804443592
+
+
+====================
+2026-01-21 10:46:23
+====================
+GetFwDtcAsync: leitura FW ainda não implementada (ZIV).
+
+
+====================
+2026-01-21 10:46:23
+====================
+FW old: 
+
+
+====================
+2026-01-21 10:46:23
+====================
+Upload config DTC ZIV: C:\Users\diogo\Desktop\recond_v2\recond_app\Recondicionamento_DTC_Routers\Recondicionamento_DTC_Routers\Configuracao\DTC\ZIV\config_ZIV.txt
+
+
+====================
+2026-01-21 10:46:36
+====================
+Config DTC ZIV enviada: config_ZIV.txt
+
+
+====================
+2026-01-21 10:46:36
+====================
+Upload config OK
+
+
+====================
+2026-01-21 10:46:39
+====================
+WS_DC idRpt=S01 idDc=ZIV1804443592 status=200
+
+
+====================
+2026-01-21 10:46:44
+====================
+S01(DTC) idDc=ZIV1804443592 httpOk=True userOk=True
+
+
+====================
+2026-01-21 10:46:44
+====================
+S01(DTC) -> True
+
+
+====================
+2026-01-21 10:46:44
+====================
+EMI PLC: emiIdDc não definido em config -> SKIP lógico.
+
+
+====================
+2026-01-21 10:46:44
+====================
+S01(EMI) -> True
+
+
+====================
+2026-01-21 10:46:49
+====================
+Workflow finished. ConformidadeFinal=True
+
+
+====================
+2026-01-21 10:46:49
+====================
+UI atualizada. Conformidade final: CONFORME
+
+
+====================
+2026-01-21 11:00:23
+====================
+DTC workflow started.
+
+
+====================
+2026-01-21 11:00:25
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-21 11:00:25
+====================
+Fabricante: ZIV
+
+
+====================
+2026-01-21 11:00:30
+====================
+ID/Serial: ZIV1804443592
+
+
+====================
+2026-01-21 11:00:30
+====================
+GetFwDtcAsync: leitura FW ainda não implementada (ZIV).
+
+
+====================
+2026-01-21 11:00:30
+====================
+FW old: 
+
+
+====================
+2026-01-21 11:00:30
+====================
+Upload config DTC ZIV: C:\Users\diogo\Desktop\recond_v2\recond_app\Recondicionamento_DTC_Routers\Recondicionamento_DTC_Routers\Configuracao\DTC\ZIV\config_ZIV.txt
+
+
+====================
+2026-01-21 11:02:49
+====================
+Config DTC ZIV enviada: config_ZIV.txt
+
+
+====================
+2026-01-21 11:02:49
+====================
+Upload config OK
+
+
+====================
+2026-01-21 11:02:50
+====================
+WS_DC idRpt=S01 idDc=ZIV1804443592 status=200
+
+
+====================
+2026-01-21 11:03:00
+====================
+S01(DTC) idDc=ZIV1804443592 httpOk=True userOk=True
+
+
+====================
+2026-01-21 11:03:00
+====================
+S01(DTC) -> True
+
+
+====================
+2026-01-21 11:03:00
+====================
+EMI PLC: emiIdDc não definido em config -> SKIP lógico.
+
+
+====================
+2026-01-21 11:03:00
+====================
+S01(EMI) -> True
+
+
+====================
+2026-01-21 11:03:09
+====================
+Workflow finished. ConformidadeFinal=True
+
+
+====================
+2026-01-21 11:03:09
+====================
+UI atualizada. Conformidade final: CONFORME
+
+
+====================
+2026-01-21 11:19:06
+====================
+DTC workflow started.
+
+
+====================
+2026-01-21 11:19:08
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-21 11:19:08
+====================
+Fabricante: ZIV
+
+
+====================
+2026-01-21 11:19:12
+====================
+ID/Serial: ZIV1804443592
+
+
+====================
+2026-01-21 11:19:15
+====================
+FW old: 
+
+
+====================
+2026-01-21 11:19:27
+====================
+Upgrade FW DTC: SKIP (decisão do utilizador).
+
+
+====================
+2026-01-21 11:19:27
+====================
+FW upgrade -> 3.23.99.1.baac1e69
+
+
+====================
+2026-01-21 11:19:27
+====================
+Upload config DTC ZIV: C:\Users\diogo\Desktop\recond_v2\recond_app\Recondicionamento_DTC_Routers\Recondicionamento_DTC_Routers\Configuracao\DTC\ZIV\config_ZIV.txt
+
+
+====================
+2026-01-21 11:21:45
+====================
+Config DTC ZIV enviada: config_ZIV.txt
+
+
+====================
+2026-01-21 11:21:45
+====================
+Upload config OK
+
+
+====================
+2026-01-21 11:21:47
+====================
+WS_DC idRpt=S01 idDc=ZIV1804443592 status=200
+
+
+====================
+2026-01-21 11:22:22
+====================
+S01(DTC) idDc=ZIV1804443592 httpOk=True userOk=False
+
+
+====================
+2026-01-21 11:22:22
+====================
+S01(DTC) -> False
+
+
+====================
+2026-01-21 11:22:22
+====================
+Erro: S01(DTC) FAIL
+
+
+====================
+2026-01-21 11:22:48
+====================
+📄 Report selecionado (existente): C:\Users\diogo\Desktop\recond_v2\recond_app\Recondicionamento_DTC_Routers\resultados\report_dtc.html
+
+
+====================
+2026-01-21 11:48:51
+====================
+=== INÍCIO WORKFLOW DTC ===
+
+
+====================
+2026-01-21 11:48:51
+====================
+[01] Substituir DTC no setup (manual) - START
+
+
+====================
+2026-01-21 11:48:54
+====================
+[01] Substituir DTC no setup (manual) - OK
+
+
+====================
+2026-01-21 11:48:54
+====================
+[02] Detetar fabricante (HTTP/HTTPS) - START
+
+
+====================
+2026-01-21 11:48:54
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-21 11:48:54
+====================
+Fabricante: ZIV
+
+
+====================
+2026-01-21 11:48:54
+====================
+[02] Detetar fabricante (HTTP/HTTPS) - OK
+
+
+====================
+2026-01-21 11:48:54
+====================
+[03] Ler ID/Serial DTC (web) - START
+
+
+====================
+2026-01-21 11:48:59
+====================
+ID/Serial: ZIV1804443592
+
+
+====================
+2026-01-21 11:48:59
+====================
+[03] Ler ID/Serial DTC (web) - OK
+
+
+====================
+2026-01-21 11:48:59
+====================
+[04] Ler FW atual - START
+
+
+====================
+2026-01-21 11:49:02
+====================
+FW old: 
+
+
+====================
+2026-01-21 11:49:02
+====================
+[04] Ler FW atual - OK
+
+
+====================
+2026-01-21 11:49:02
+====================
+[05] Upgrade FW (se necessário) - START
+
+
+====================
+2026-01-21 11:49:06
+====================
+[05] Upgrade FW (se necessário) - SKIP: SKIP (decisão do utilizador).
+
+
+====================
+2026-01-21 11:49:06
+====================
+[06] Upload configurações (E-REDES) - START
+
+
+====================
+2026-01-21 11:49:06
+====================
+Upload config DTC ZIV: C:\Users\diogo\Desktop\recond_v2\recond_app\Recondicionamento_DTC_Routers\Recondicionamento_DTC_Routers\Configuracao\DTC\ZIV\config_ZIV.txt
+
+
+====================
+2026-01-21 11:51:32
+====================
+Config DTC ZIV enviada: config_ZIV.txt
+
+
+====================
+2026-01-21 11:51:32
+====================
+[06] Upload configurações (E-REDES) - OK
+
+
+====================
+2026-01-21 11:51:32
+====================
+[07] S01 DTC: Tensões/Correntes (WS) - START
+
+
+====================
+2026-01-21 11:51:33
+====================
+WS_DC idRpt=S01 idDc=ZIV1804443592 status=200
+
+
+====================
+2026-01-21 11:51:58
+====================
+S01(DTC) idDc=ZIV1804443592 httpOk=True userOk=True
+
+
+====================
+2026-01-21 11:51:58
+====================
+[07] S01 DTC: Tensões/Correntes (WS) - OK
+
+
+====================
+2026-01-21 11:51:58
+====================
+[08] S01 EMI PLC: Instantâneos (WS) - START
+
+
+====================
+2026-01-21 11:51:58
+====================
+EMI PLC: emiIdDc não definido em config -> SKIP lógico.
+
+
+====================
+2026-01-21 11:51:58
+====================
+[08] S01 EMI PLC: Instantâneos (WS) - OK
+
+
+====================
+2026-01-21 11:51:58
+====================
+[09] Adicionar ao report - START
+
+
+====================
+2026-01-21 11:52:01
+====================
+[09] Adicionar ao report - OK
+
+
+====================
+2026-01-21 11:52:01
+====================
+=== FIM WORKFLOW DTC | Conformidade: NÃO CONFORME ===
+
+
+====================
+2026-01-21 11:52:02
+====================
+UI atualizada. Conformidade final: NÃO CONFORME
+
+
+====================
+2026-01-21 12:09:38
+====================
+=== INÍCIO WORKFLOW DTC ===
+
+
+====================
+2026-01-21 12:09:38
+====================
+[00] Validar setup - START
+
+
+====================
+2026-01-21 12:09:38
+====================
+[00] Validar setup - SKIP: VerifyTestSetupAsync não definido (SKIP).
+
+
+====================
+2026-01-21 12:09:38
+====================
+[01] Substituir DTC no setup (manual) - START
+
+
+====================
+2026-01-21 12:09:39
+====================
+[01] Substituir DTC no setup (manual) - Ok
+
+
+====================
+2026-01-21 12:09:39
+====================
+[02] Detetar fabricante (HTTP/HTTPS) - START
+
+
+====================
+2026-01-21 12:09:40
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-21 12:09:40
+====================
+Fabricante: ZIV
+
+
+====================
+2026-01-21 12:09:40
+====================
+[02] Detetar fabricante (HTTP/HTTPS) - Ok
+
+
+====================
+2026-01-21 12:09:40
+====================
+[03] Ler ID/Serial DTC (web) - START
+
+
+====================
+2026-01-21 12:09:45
+====================
+ID/Serial: ZIV1804443592
+
+
+====================
+2026-01-21 12:09:45
+====================
+[03] Ler ID/Serial DTC (web) - Ok
+
+
+====================
+2026-01-21 12:09:45
+====================
+[04] Ler FW atual - START
+
+
+====================
+2026-01-21 12:09:48
+====================
+FW old: 
+
+
+====================
+2026-01-21 12:09:48
+====================
+[04] Ler FW atual - Ok
+
+
+====================
+2026-01-21 12:09:48
+====================
+[05] Upgrade FW (se necessário) - START
+
+
+====================
+2026-01-21 12:09:59
+====================
+[05] Upgrade FW (se necessário) - SKIP: Decisão: não tentar upgrade (FW atual desconhecido).
+
+
+====================
+2026-01-21 12:09:59
+====================
+[06] Upload configurações (E-REDES) - START
+
+
+====================
+2026-01-21 12:09:59
+====================
+Upload config DTC ZIV: C:\Users\diogo\Desktop\recond_v2\recond_app\Recondicionamento_DTC_Routers\Recondicionamento_DTC_Routers\Configuracao\DTC\ZIV\config_ZIV.txt
+
+
+====================
+2026-01-21 12:10:22
+====================
+[06] Upload configurações (E-REDES) - FAIL: Timed out after 20 seconds
+
+
+====================
+2026-01-21 12:10:22
+====================
+[07] S01 DTC: Tensões/Correntes (WS) - START
+
+
+====================
+2026-01-21 12:10:23
+====================
+WS_DC idRpt=S01 idDc=ZIV1804443592 status=200
+
+
+====================
+2026-01-21 12:10:28
+====================
+S01(DTC) idDc=ZIV1804443592 httpOk=True userOk=False
+
+
+====================
+2026-01-21 12:10:28
+====================
+S01(DTC) -> False
+
+
+====================
+2026-01-21 12:10:28
+====================
+[07] S01 DTC: Tensões/Correntes (WS) - FAIL: S01(DTC) FAIL
+
+
+====================
+2026-01-21 12:10:28
+====================
+[08] S01 EMI PLC: Instantâneos (WS) - START
+
+
+====================
+2026-01-21 12:10:28
+====================
+EMI PLC: emiIdDc não definido em config -> SKIP lógico.
+
+
+====================
+2026-01-21 12:10:28
+====================
+S01(EMI) -> True
+
+
+====================
+2026-01-21 12:10:28
+====================
+[08] S01 EMI PLC: Instantâneos (WS) - Ok
+
+
+====================
+2026-01-21 12:10:28
+====================
+[09] Adicionar ao report - START
+
+
+====================
+2026-01-21 12:10:30
+====================
+[09] Adicionar ao report - Ok
+
+
+====================
+2026-01-21 12:10:30
+====================
+=== FIM WORKFLOW DTC | Conformidade: NÃO CONFORME ===
+
+
+====================
+2026-01-21 12:10:30
+====================
+UI atualizada. Conformidade final: NÃO CONFORME
+
