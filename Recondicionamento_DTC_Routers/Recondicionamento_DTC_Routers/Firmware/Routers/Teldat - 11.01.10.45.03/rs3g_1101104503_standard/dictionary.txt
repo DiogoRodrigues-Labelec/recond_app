@@ -1,0 +1,126 @@
+#
+#   TELDAT Radius dictionary
+#   http://www.teldat.es
+#
+
+VENDOR  Teldat  2007
+
+#
+# Login-Service levels (Obsolete)
+#
+#VALUE       Login-Service   Teldat-None             800
+#VALUE       Login-Service   Teldat-Event            801
+#VALUE       Login-Service   Teldat-Monitor          802
+#VALUE       Login-Service   Teldat-Config           803
+#VALUE       Login-Service   Teldat-Root             804
+#VALUE       Login-Service   Teldat-Keymanager       805
+
+#VALUE       Login-Service   Teldat-Level0           900
+#VALUE       Login-Service   Teldat-Level1           901
+#VALUE       Login-Service   Teldat-Level2           902
+#VALUE       Login-Service   Teldat-Level3           903
+#VALUE       Login-Service   Teldat-Level4           904
+#VALUE       Login-Service   Teldat-Level5           905
+#VALUE       Login-Service   Teldat-Level6           906
+#VALUE       Login-Service   Teldat-Level7           907
+#VALUE       Login-Service   Teldat-Level8           908
+#VALUE       Login-Service   Teldat-Level9           909
+#VALUE       Login-Service   Teldat-Level10          910
+#VALUE       Login-Service   Teldat-Level11          911
+#VALUE       Login-Service   Teldat-Level12          912
+#VALUE       Login-Service   Teldat-Level13          913
+#VALUE       Login-Service   Teldat-Level14          914
+#VALUE       Login-Service   Teldat-Level15          915
+
+#VALUE       Login-Service   Teldat-Level0-Strict    916
+#VALUE       Login-Service   Teldat-Level1-Strict    917
+#VALUE       Login-Service   Teldat-Level2-Strict    918
+#VALUE       Login-Service   Teldat-Level3-Strict    919
+#VALUE       Login-Service   Teldat-Level4-Strict    920
+#VALUE       Login-Service   Teldat-Level5-Strict    921
+#VALUE       Login-Service   Teldat-Level6-Strict    922
+#VALUE       Login-Service   Teldat-Level7-Strict    923
+#VALUE       Login-Service   Teldat-Level8-Strict    924
+#VALUE       Login-Service   Teldat-Level9-Strict    925
+#VALUE       Login-Service   Teldat-Level10-Strict   926
+#VALUE       Login-Service   Teldat-Level11-Strict   927
+#VALUE       Login-Service   Teldat-Level12-Strict   928
+#VALUE       Login-Service   Teldat-Level13-Strict   929
+#VALUE       Login-Service   Teldat-Level14-Strict   930
+#VALUE       Login-Service   Teldat-Level15-Strict   931
+
+
+#
+# Vendor Access-Level levels (current)
+#
+ATTRIBUTE   Access-Level    1           integer     Teldat
+
+VALUE       Access-Level    None                    800
+VALUE       Access-Level    Event                   801
+VALUE       Access-Level    Monitor                 802
+VALUE       Access-Level    Config                  803
+VALUE       Access-Level    Root                    804
+VALUE       Access-Level    Keymanager              805
+
+VALUE       Access-Level    Level0                  900
+VALUE       Access-Level    Level1                  901
+VALUE       Access-Level    Level2                  902
+VALUE       Access-Level    Level3                  903
+VALUE       Access-Level    Level4                  904
+VALUE       Access-Level    Level5                  905
+VALUE       Access-Level    Level6                  906
+VALUE       Access-Level    Level7                  907
+VALUE       Access-Level    Level8                  908
+VALUE       Access-Level    Level9                  909
+VALUE       Access-Level    Level10                 910
+VALUE       Access-Level    Level11                 911
+VALUE       Access-Level    Level12                 912
+VALUE       Access-Level    Level13                 913
+VALUE       Access-Level    Level14                 914
+VALUE       Access-Level    Level15                 915
+
+VALUE       Access-Level    Level0-Strict           916
+VALUE       Access-Level    Level1-Strict           917
+VALUE       Access-Level    Level2-Strict           918
+VALUE       Access-Level    Level3-Strict           919
+VALUE       Access-Level    Level4-Strict           920
+VALUE       Access-Level    Level5-Strict           921
+VALUE       Access-Level    Level6-Strict           922
+VALUE       Access-Level    Level7-Strict           923
+VALUE       Access-Level    Level8-Strict           924
+VALUE       Access-Level    Level9-Strict           925
+VALUE       Access-Level    Level10-Strict          926
+VALUE       Access-Level    Level11-Strict          927
+VALUE       Access-Level    Level12-Strict          928
+VALUE       Access-Level    Level13-Strict          929
+VALUE       Access-Level    Level14-Strict          930
+VALUE       Access-Level    Level15-Strict          931
+
+#
+#		Teldat Hotspot attributes.
+#
+
+ATTRIBUTE   Teldat-Hotspot-Bw-Kbps-Up          		  4     integer     Teldat
+ATTRIBUTE   Teldat-Hotspot-Bw-Kbps-Down        		  5     integer     Teldat
+ATTRIBUTE   Teldat-Hotspot-Bw-Bc-Up            		  6     integer     Teldat
+ATTRIBUTE   Teldat-Hotspot-Bw-Bc-Down          		  7     integer     Teldat
+ATTRIBUTE   Teldat-Hotspot-Bw-Be-Up            		  8     integer     Teldat
+ATTRIBUTE   Teldat-Hotspot-Bw-Be-Down          		  9     integer     Teldat
+ATTRIBUTE   Teldat-Hotspot-QoS-Max-Octets-Up          10    integer     Teldat
+ATTRIBUTE   Teldat-Hotspot-QoS-Max-Octets-Down        11    integer     Teldat
+ATTRIBUTE   Teldat-Hotspot-QoS-Queue-Length-Up        12    integer     Teldat
+ATTRIBUTE   Teldat-Hotspot-QoS-Queue-Length-Down      13    integer     Teldat
+ATTRIBUTE   Teldat-Hotspot-Command                    14    integer     Teldat
+ATTRIBUTE   Teldat-Hotspot-Userurl                    15    string      Teldat
+
+#
+# Attributes 16-17 reserved
+#
+ATTRIBUTE   Teldat-Hotspot-Redir-Url                  18    string      Teldat
+
+#
+# Vendor HotSpot command values
+#
+
+VALUE       Teldat-Hotspot-Command     Reauthenticate          0
+

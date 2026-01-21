@@ -1,0 +1,1069 @@
+﻿
+====================
+2026-01-20 11:26:27
+====================
+=== INÍCIO WORKFLOW DTC ===
+
+
+====================
+2026-01-20 11:26:27
+====================
+[1] Validar setup (8.1) ...
+
+
+====================
+2026-01-20 11:26:27
+====================
+[2] Substituir DTC no setup (manual) ...
+
+
+====================
+2026-01-20 11:26:31
+====================
+[3] Detetar fabricante (HTTP/HTTPS) ...
+
+
+====================
+2026-01-20 11:26:32
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-20 11:26:32
+====================
+Fabricante detetado: ZIV
+
+
+====================
+2026-01-20 11:26:32
+====================
+[4] Ler ID/Serial DTC (web) ...
+
+
+====================
+2026-01-20 11:26:38
+====================
+ID/Serial: ZIV1804443592
+
+
+====================
+2026-01-20 11:26:38
+====================
+[5] Ler FW atual ...
+
+
+====================
+2026-01-20 11:26:38
+====================
+GetFwDtcAsync: leitura FW ainda não implementada (ZIV).
+
+
+====================
+2026-01-20 11:26:38
+====================
+FW atual: 
+
+
+====================
+2026-01-20 11:26:38
+====================
+[6] Upgrade FW (se necessário) ...
+
+
+====================
+2026-01-20 11:26:38
+====================
+[7] Upload configurações (E-REDES) ...
+
+
+====================
+2026-01-20 11:26:38
+====================
+[8] Teste analógicas (WebService) ...
+
+
+====================
+2026-01-20 11:26:39
+====================
+WS_DC idRpt=S01 idDc=ZIV1804443592 status=200 body=<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soap-enc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.asais.fr/ns/Saturne/DC/ws" ><soap:Body><RequestResponse><RequestResult>&lt;Report IdRpt=&quot;S01&quot; IdPet=&quot;7190&quot; Version=&quot;3.4_EDP_2.0&quot;&gt;
+&lt;Cnc Id=&quot;ZIV1804443592&quot;&gt;
+&lt;/Cnc&gt;
+&lt;/Report&gt;
+</RequestResult></RequestResponse></soap:Body></soap:Envelope>
+
+
+====================
+2026-01-20 11:26:58
+====================
+S01(DTC) httpOk=True userOk=False
+
+
+====================
+2026-01-20 11:26:58
+====================
+[8] FAIL: Teste analógicas/S01 devolveu FAIL.
+
+
+====================
+2026-01-20 11:26:59
+====================
+Erro: Teste analógicas/S01 devolveu FAIL.
+
+
+====================
+2026-01-20 12:30:21
+====================
+🆕 Novo report criado: C:\Users\diogo\Desktop\recond_v2\Recondicionamento_DTC_Routers\resultados\report_dtc.html
+
+
+====================
+2026-01-20 12:30:28
+====================
+=== INÍCIO WORKFLOW DTC ===
+
+
+====================
+2026-01-20 12:30:28
+====================
+[2] Substituir DTC no setup (manual) ...
+
+
+====================
+2026-01-20 12:30:31
+====================
+[3] Detetar fabricante (HTTP/HTTPS) ...
+
+
+====================
+2026-01-20 12:30:32
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-20 12:30:32
+====================
+Fabricante detetado: ZIV
+
+
+====================
+2026-01-20 12:30:32
+====================
+[4] Ler ID/Serial DTC (web) ...
+
+
+====================
+2026-01-20 12:30:37
+====================
+ID/Serial: ZIV1804443592
+
+
+====================
+2026-01-20 12:30:37
+====================
+[5] Ler FW atual ...
+
+
+====================
+2026-01-20 12:30:37
+====================
+GetFwDtcAsync: leitura FW ainda não implementada (ZIV).
+
+
+====================
+2026-01-20 12:30:37
+====================
+FW atual: 
+
+
+====================
+2026-01-20 12:30:37
+====================
+[6] Upgrade FW (se necessário) ...
+
+
+====================
+2026-01-20 12:30:37
+====================
+[7] Upload configurações (E-REDES) ...
+
+
+====================
+2026-01-20 12:30:37
+====================
+[8] Teste analógicas (WebService) ...
+
+
+====================
+2026-01-20 12:30:39
+====================
+WS_DC idRpt=S01 idDc=ZIV1804443592 status=200 body=<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soap-enc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.asais.fr/ns/Saturne/DC/ws" ><soap:Body><RequestResponse><RequestResult>&lt;Report IdRpt=&quot;S01&quot; IdPet=&quot;7190&quot; Version=&quot;3.4_EDP_2.0&quot;&gt;
+&lt;Cnc Id=&quot;ZIV1804443592&quot;&gt;
+&lt;/Cnc&gt;
+&lt;/Report&gt;
+</RequestResult></RequestResponse></soap:Body></soap:Envelope>
+
+
+====================
+2026-01-20 12:30:56
+====================
+S01(DTC) httpOk=True userOk=False
+
+
+====================
+2026-01-20 12:30:56
+====================
+[8] FAIL: Teste analógicas/S01 devolveu FAIL.
+
+
+====================
+2026-01-20 12:30:56
+====================
+Erro: Teste analógicas/S01 devolveu FAIL.
+
+
+====================
+2026-01-20 12:53:44
+====================
+🆕 Novo report criado: C:\Users\diogo\Desktop\recond_v2\Recondicionamento_DTC_Routers\resultados\report_dtc (1).html
+
+
+====================
+2026-01-20 12:53:46
+====================
+=== INÍCIO WORKFLOW DTC ===
+
+
+====================
+2026-01-20 12:53:46
+====================
+[2] Substituir DTC no setup (manual) ...
+
+
+====================
+2026-01-20 12:53:47
+====================
+[3] Detetar fabricante (HTTP/HTTPS) ...
+
+
+====================
+2026-01-20 12:53:47
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-20 12:53:47
+====================
+Fabricante detetado: ZIV
+
+
+====================
+2026-01-20 12:53:47
+====================
+[4] Ler ID/Serial DTC (web) ...
+
+
+====================
+2026-01-20 12:53:52
+====================
+ID/Serial: ZIV1804443592
+
+
+====================
+2026-01-20 12:53:52
+====================
+[5] Ler FW atual ...
+
+
+====================
+2026-01-20 12:53:52
+====================
+GetFwDtcAsync: leitura FW ainda não implementada (ZIV).
+
+
+====================
+2026-01-20 12:53:52
+====================
+FW atual: 
+
+
+====================
+2026-01-20 12:53:52
+====================
+[6] Upgrade FW (se necessário) ...
+
+
+====================
+2026-01-20 12:53:52
+====================
+[7] Upload configurações (E-REDES) ...
+
+
+====================
+2026-01-20 12:53:52
+====================
+[8] Teste analógicas (WebService) ...
+
+
+====================
+2026-01-20 12:53:53
+====================
+WS_DC idRpt=S01 idDc=ZIV1804443592 status=200 body=<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soap-enc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.asais.fr/ns/Saturne/DC/ws" ><soap:Body><RequestResponse><RequestResult>&lt;Report IdRpt=&quot;S01&quot; IdPet=&quot;7190&quot; Version=&quot;3.4_EDP_2.0&quot;&gt;
+&lt;Cnc Id=&quot;ZIV1804443592&quot;&gt;
+&lt;/Cnc&gt;
+&lt;/Report&gt;
+</RequestResult></RequestResponse></soap:Body></soap:Envelope>
+
+
+====================
+2026-01-20 12:54:26
+====================
+S01(DTC) httpOk=True userOk=True
+
+
+====================
+2026-01-20 12:54:26
+====================
+[9] Teste EMI PLC (WebService) ...
+
+
+====================
+2026-01-20 12:54:26
+====================
+EMI PLC: ainda não ligado (SKIP lógico).
+
+
+====================
+2026-01-20 12:54:26
+====================
+[10] Adicionar ao report ...
+
+
+====================
+2026-01-20 12:54:31
+====================
+Report atualizado.
+
+
+====================
+2026-01-20 12:54:31
+====================
+=== FIM WORKFLOW DTC | Conformidade: CONFORME ===
+
+
+====================
+2026-01-20 12:54:31
+====================
+UI atualizada. Conformidade final: CONFORME
+
+
+====================
+2026-01-20 16:58:57
+====================
+=== INÍCIO WORKFLOW DTC ===
+
+
+====================
+2026-01-20 16:58:57
+====================
+[02] Substituir DTC no setup (manual) - START
+
+
+====================
+2026-01-20 16:59:01
+====================
+[02] Substituir DTC no setup (manual) - OK
+
+
+====================
+2026-01-20 16:59:01
+====================
+[03] Detetar fabricante (HTTP/HTTPS) - START
+
+
+====================
+2026-01-20 16:59:06
+====================
+HTTP probe DTC [10.127.159.38:80] -> UNKNOWN
+
+
+====================
+2026-01-20 16:59:06
+====================
+Fabricante detetado: UNKNOWN
+
+
+====================
+2026-01-20 16:59:06
+====================
+[03] Detetar fabricante (HTTP/HTTPS) - OK
+
+
+====================
+2026-01-20 16:59:06
+====================
+[04] Ler ID/Serial DTC (web) - START
+
+
+====================
+2026-01-20 16:59:06
+====================
+GetIdDtcAsync: fabricante UNKNOWN não implementado.
+
+
+====================
+2026-01-20 16:59:06
+====================
+ID/Serial: 
+
+
+====================
+2026-01-20 16:59:06
+====================
+[04] Ler ID/Serial DTC (web) - OK
+
+
+====================
+2026-01-20 16:59:06
+====================
+[05] Ler FW atual - START
+
+
+====================
+2026-01-20 16:59:06
+====================
+GetFwDtcAsync: leitura FW ainda não implementada (UNKNOWN).
+
+
+====================
+2026-01-20 16:59:06
+====================
+FW atual: 
+
+
+====================
+2026-01-20 16:59:06
+====================
+[05] Ler FW atual - OK
+
+
+====================
+2026-01-20 16:59:06
+====================
+[06] Upgrade FW (se necessário) - START
+
+
+====================
+2026-01-20 16:59:06
+====================
+[06] Upgrade FW (se necessário) - OK
+
+
+====================
+2026-01-20 16:59:06
+====================
+[07] Upload configurações (E-REDES) - START
+
+
+====================
+2026-01-20 16:59:06
+====================
+[07] Upload configurações (E-REDES) - OK
+
+
+====================
+2026-01-20 16:59:06
+====================
+[08] Teste analógicas (WebService) - START
+
+
+====================
+2026-01-20 16:59:09
+====================
+[08] Teste analógicas (WebService) - FAIL: Nenhuma ligação pôde ser feita porque o computador de destino
+as recusou ativamente. (10.127.159.38:8080)
+
+
+====================
+2026-01-20 16:59:09
+====================
+[09] Teste EMI PLC (WebService) - START
+
+
+====================
+2026-01-20 16:59:09
+====================
+EMI PLC: ainda não ligado (SKIP lógico).
+
+
+====================
+2026-01-20 16:59:09
+====================
+[09] Teste EMI PLC (WebService) - OK
+
+
+====================
+2026-01-20 16:59:09
+====================
+=== FIM WORKFLOW DTC | Conformidade: NÃO CONFORME ===
+
+
+====================
+2026-01-20 16:59:09
+====================
+UI atualizada. Conformidade final: NÃO CONFORME
+
+
+====================
+2026-01-20 17:07:16
+====================
+=== INÍCIO WORKFLOW DTC ===
+
+
+====================
+2026-01-20 17:07:16
+====================
+[02] Substituir DTC no setup (manual) - START
+
+
+====================
+2026-01-20 17:07:17
+====================
+[02] Substituir DTC no setup (manual) - OK
+
+
+====================
+2026-01-20 17:07:17
+====================
+[03] Detetar fabricante (HTTP/HTTPS) - START
+
+
+====================
+2026-01-20 17:07:18
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-20 17:07:18
+====================
+Fabricante detetado: ZIV
+
+
+====================
+2026-01-20 17:07:18
+====================
+[03] Detetar fabricante (HTTP/HTTPS) - OK
+
+
+====================
+2026-01-20 17:07:18
+====================
+[04] Ler ID/Serial DTC (web) - START
+
+
+====================
+2026-01-20 17:07:24
+====================
+ID/Serial: ZIV1804443592
+
+
+====================
+2026-01-20 17:07:24
+====================
+[04] Ler ID/Serial DTC (web) - OK
+
+
+====================
+2026-01-20 17:07:24
+====================
+[05] Ler FW atual - START
+
+
+====================
+2026-01-20 17:07:24
+====================
+GetFwDtcAsync: leitura FW ainda não implementada (ZIV).
+
+
+====================
+2026-01-20 17:07:24
+====================
+FW atual: 
+
+
+====================
+2026-01-20 17:07:24
+====================
+[05] Ler FW atual - OK
+
+
+====================
+2026-01-20 17:07:24
+====================
+[06] Upgrade FW (se necessário) - START
+
+
+====================
+2026-01-20 17:07:24
+====================
+[06] Upgrade FW (se necessário) - OK
+
+
+====================
+2026-01-20 17:07:24
+====================
+[07] Upload configurações (E-REDES) - START
+
+
+====================
+2026-01-20 17:07:24
+====================
+[07] Upload configurações (E-REDES) - OK
+
+
+====================
+2026-01-20 17:07:24
+====================
+[08] Teste analógicas (WebService) - START
+
+
+====================
+2026-01-20 17:07:25
+====================
+WS_DC idRpt=S01 idDc=ZIV1804443592 status=200 body=<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soap-enc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.asais.fr/ns/Saturne/DC/ws" ><soap:Body><RequestResponse><RequestResult>&lt;Report IdRpt=&quot;S01&quot; IdPet=&quot;7190&quot; Version=&quot;3.4_EDP_2.0&quot;&gt;
+&lt;Cnc Id=&quot;ZIV1804443592&quot;&gt;
+&lt;/Cnc&gt;
+&lt;/Report&gt;
+</RequestResult></RequestResponse></soap:Body></soap:Envelope>
+
+
+====================
+2026-01-20 17:07:32
+====================
+S01(DTC) httpOk=True userOk=False
+
+
+====================
+2026-01-20 17:07:32
+====================
+[08] Teste analógicas (WebService) - FAIL: Teste analógicas/S01 devolveu FAIL.
+
+
+====================
+2026-01-20 17:07:32
+====================
+[09] Teste EMI PLC (WebService) - START
+
+
+====================
+2026-01-20 17:07:32
+====================
+EMI PLC: ainda não ligado (SKIP lógico).
+
+
+====================
+2026-01-20 17:07:32
+====================
+[09] Teste EMI PLC (WebService) - OK
+
+
+====================
+2026-01-20 17:07:32
+====================
+=== FIM WORKFLOW DTC | Conformidade: NÃO CONFORME ===
+
+
+====================
+2026-01-20 17:07:32
+====================
+UI atualizada. Conformidade final: NÃO CONFORME
+
+
+====================
+2026-01-20 17:49:51
+====================
+=== INICIO WORKFLOW DTC ===
+
+
+====================
+2026-01-20 17:49:51
+====================
+[1] Substituir DTC no setup (manual): RUNNING
+
+
+====================
+2026-01-20 17:49:52
+====================
+[1] Substituir DTC no setup (manual): OK (OK)
+
+
+====================
+2026-01-20 17:49:52
+====================
+[2] Detetar fabricante (HTTP/HTTPS): RUNNING
+
+
+====================
+2026-01-20 17:49:53
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-20 17:49:53
+====================
+[2] Detetar fabricante (HTTP/HTTPS): OK (ZIV)
+
+
+====================
+2026-01-20 17:49:53
+====================
+[3] Ler ID/Serial DTC (web): RUNNING
+
+
+====================
+2026-01-20 17:49:58
+====================
+[3] Ler ID/Serial DTC (web): OK (ZIV1804443592)
+
+
+====================
+2026-01-20 17:49:58
+====================
+[4] Ler FW atual: RUNNING
+
+
+====================
+2026-01-20 17:49:58
+====================
+GetFwDtcAsync: leitura FW ainda não implementada (ZIV).
+
+
+====================
+2026-01-20 17:49:58
+====================
+[4] Ler FW atual: OK (vazio)
+
+
+====================
+2026-01-20 17:49:58
+====================
+[5] Upgrade FW (se necessário): SKIPPED (Não implementado / não aplicável)
+
+
+====================
+2026-01-20 17:49:58
+====================
+[6] Upload configurações (E-REDES): RUNNING
+
+
+====================
+2026-01-20 17:49:58
+====================
+Upload config ZIV (DTC) via ficheiro: C:\Users\diogo\Desktop\recond_v2\Recondicionamento_DTC_Routers\Recondicionamento_DTC_Routers\Configuracao\DTC\config_ZIV.txt
+
+
+====================
+2026-01-20 17:49:58
+====================
+❌ Erro no workflow: Ficheiro de config DTC ZIV não encontrado.
+
+
+====================
+2026-01-20 17:49:58
+====================
+Erro: Ficheiro de config DTC ZIV não encontrado.
+
+
+====================
+2026-01-20 17:52:58
+====================
+=== INICIO WORKFLOW DTC ===
+
+
+====================
+2026-01-20 17:52:58
+====================
+[1] Substituir DTC no setup (manual): RUNNING
+
+
+====================
+2026-01-20 17:52:59
+====================
+[1] Substituir DTC no setup (manual): OK (OK)
+
+
+====================
+2026-01-20 17:52:59
+====================
+[2] Detetar fabricante (HTTP/HTTPS): RUNNING
+
+
+====================
+2026-01-20 17:52:59
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-20 17:52:59
+====================
+[2] Detetar fabricante (HTTP/HTTPS): OK (ZIV)
+
+
+====================
+2026-01-20 17:52:59
+====================
+[3] Ler ID/Serial DTC (web): RUNNING
+
+
+====================
+2026-01-20 17:53:05
+====================
+[3] Ler ID/Serial DTC (web): OK (ZIV1804443592)
+
+
+====================
+2026-01-20 17:53:05
+====================
+[4] Ler FW atual: RUNNING
+
+
+====================
+2026-01-20 17:53:05
+====================
+GetFwDtcAsync: leitura FW ainda não implementada (ZIV).
+
+
+====================
+2026-01-20 17:53:05
+====================
+[4] Ler FW atual: OK (vazio)
+
+
+====================
+2026-01-20 17:53:05
+====================
+[5] Upgrade FW (se necessário): SKIPPED (Não implementado / não aplicável)
+
+
+====================
+2026-01-20 17:53:05
+====================
+[6] Upload configurações (E-REDES): RUNNING
+
+
+====================
+2026-01-20 17:53:29
+====================
+Upload config ZIV (DTC) via ficheiro: C:\Users\diogo\Desktop\recond_v2\Recondicionamento_DTC_Routers\Recondicionamento_DTC_Routers\Configuracao\DTC\config_ZIV.txt
+
+
+====================
+2026-01-20 17:54:46
+====================
+=== INICIO WORKFLOW DTC ===
+
+
+====================
+2026-01-20 17:54:46
+====================
+[1] Substituir DTC no setup (manual): RUNNING
+
+
+====================
+2026-01-20 17:54:48
+====================
+[1] Substituir DTC no setup (manual): OK (OK)
+
+
+====================
+2026-01-20 17:54:48
+====================
+[2] Detetar fabricante (HTTP/HTTPS): RUNNING
+
+
+====================
+2026-01-20 17:54:48
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-20 17:54:48
+====================
+[2] Detetar fabricante (HTTP/HTTPS): OK (ZIV)
+
+
+====================
+2026-01-20 17:54:48
+====================
+[3] Ler ID/Serial DTC (web): RUNNING
+
+
+====================
+2026-01-20 17:54:55
+====================
+[3] Ler ID/Serial DTC (web): OK (ZIV1804443592)
+
+
+====================
+2026-01-20 17:54:55
+====================
+[4] Ler FW atual: RUNNING
+
+
+====================
+2026-01-20 17:54:55
+====================
+GetFwDtcAsync: leitura FW ainda não implementada (ZIV).
+
+
+====================
+2026-01-20 17:54:55
+====================
+[4] Ler FW atual: OK (vazio)
+
+
+====================
+2026-01-20 17:54:55
+====================
+[5] Upgrade FW (se necessário): SKIPPED (Não implementado / não aplicável)
+
+
+====================
+2026-01-20 17:54:55
+====================
+[6] Upload configurações (E-REDES): RUNNING
+
+
+====================
+2026-01-20 17:54:55
+====================
+Upload config ZIV (DTC) via ficheiro: C:\Users\diogo\Desktop\recond_v2\Recondicionamento_DTC_Routers\Recondicionamento_DTC_Routers\Configuracao\DTC\ZIV\config_ZIV.txt
+
+
+====================
+2026-01-20 17:54:55
+====================
+UploadConfig_ZivDtcAsync: NOT IMPLEMENTED (liga igual ao Router).
+
+
+====================
+2026-01-20 17:54:55
+====================
+❌ Erro no workflow: Liga aqui o upload de config do DTC ZIV (igual ao Router).
+
+
+====================
+2026-01-20 17:54:55
+====================
+Erro: Liga aqui o upload de config do DTC ZIV (igual ao Router).
+
+
+====================
+2026-01-20 18:19:39
+====================
+DTC workflow started.
+
+
+====================
+2026-01-20 18:19:41
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-20 18:19:41
+====================
+Fabricante: ZIV
+
+
+====================
+2026-01-20 18:19:46
+====================
+ID/Serial: ZIV1804443592
+
+
+====================
+2026-01-20 18:19:46
+====================
+GetFwDtcAsync: leitura FW ainda não implementada (ZIV).
+
+
+====================
+2026-01-20 18:19:46
+====================
+FW old: 
+
+
+====================
+2026-01-20 18:19:46
+====================
+Upload config DTC ZIV: C:\Users\diogo\Desktop\recond_v2\Recondicionamento_DTC_Routers\Recondicionamento_DTC_Routers\Configuracao\DTC\config_ZIV.txt
+
+
+====================
+2026-01-20 18:19:46
+====================
+Erro: Ficheiro config DTC ZIV não encontrado.
+
+
+====================
+2026-01-20 18:20:32
+====================
+DTC workflow started.
+
+
+====================
+2026-01-20 18:20:33
+====================
+HTTP probe DTC [10.127.159.38:80] -> ZIV
+
+
+====================
+2026-01-20 18:20:33
+====================
+Fabricante: ZIV
+
+
+====================
+2026-01-20 18:20:38
+====================
+ID/Serial: ZIV1804443592
+
+
+====================
+2026-01-20 18:20:38
+====================
+GetFwDtcAsync: leitura FW ainda não implementada (ZIV).
+
+
+====================
+2026-01-20 18:20:38
+====================
+FW old: 
+
+
+====================
+2026-01-20 18:20:38
+====================
+Upload config DTC ZIV: C:\Users\diogo\Desktop\recond_v2\Recondicionamento_DTC_Routers\Recondicionamento_DTC_Routers\Configuracao\DTC\ZIV\config_ZIV.txt
+
+
+====================
+2026-01-20 18:20:45
+====================
+UploadConfig DTC ZIV erro: no such element: Unable to locate element: {"method":"xpath","selector":"/html/body/table[2]/tbody/tr/td[2]/table/tbody/tr/td[2]/form/p[1]/input"}
+  (Session info: chrome=143.0.7499.193); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#nosuchelementexception
+
+
+====================
+2026-01-20 18:20:45
+====================
+Erro: no such element: Unable to locate element: {"method":"xpath","selector":"/html/body/table[2]/tbody/tr/td[2]/table/tbody/tr/td[2]/form/p[1]/input"}
+  (Session info: chrome=143.0.7499.193); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#nosuchelementexception
+

@@ -1,0 +1,809 @@
+package autoload
+
+config core 'main'
+	option Enabled 'yes'
+	option StartTimer '120'
+	option RetryTimer '30'
+	option BackoffTimer '15'
+	option BootUsingConfig 'altconfig'
+	option BootUsingImage 'altimage'
+
+config entry
+	option Configured 'yes'
+	option SegmentName 'altconfig'
+	option RemoteFilename '$$.ini'
+
+config entry
+	option Configured 'yes'
+	option SegmentName 'altimage'
+	option RemoteFilename '$$.img'
+
+config entry
+	option Configured 'yes'
+	option SegmentName 'config1'
+	option RemoteFilename '$$.vas'
+
+package bfdd
+
+package bgpd
+
+package critproc
+
+package cwatch
+
+config watch 'wan'
+	option enabled '1'
+	option method 'icmp'
+	option icmp_attempts '10'
+	option icmp_timeout '3'
+	option icmp_size '56'
+	option icmp_ttl '128'
+	option icmp_reliability '50'
+	option icmp_hosts '172.18.233.185 172.18.246.120'
+	list test_ifaces '3G'
+	option failure_time_1 '59m'
+	option failure_action_1 'ifup 3G'
+	option failure_time_2 '79m'
+	option failure_action_2 'vam at+cfun=0; sleep 5; uqmi --set-client-id wda,1 --release-client-id wda -d /dev/smdcntl0; vam at+cfun=1'
+	option failure_time_3 '120m'
+	option failure_action_3 'recipe:reboot'
+
+package ddns
+
+package dhcp
+
+config dnsmasq
+	option domainneeded '1'
+	option boguspriv '1'
+	option filterwin2k '0'
+	option localise_queries '1'
+	option rebind_protection '1'
+	option rebind_localhost '1'
+	option local '/lan/'
+	option domain 'lan'
+	option expandhosts '1'
+	option nonegcache '0'
+	option authoritative '1'
+	option readethers '1'
+	option leasefile '/tmp/dhcp.leases'
+	option resolvfile '/tmp/resolv.conf.auto'
+
+config dhcp 'lan'
+	option interface 'lan'
+	option ignore '1'
+
+package dhcp_fwd
+
+package dmvpn
+
+package dnposd
+
+package dropbear
+
+config dropbear
+	option PasswordAuth 'on'
+	option Port '2211'
+	option BannerFile '/etc/banner'
+	option RootPasswordAuth 'yes'
+
+package dynamics
+
+package firewall
+
+config defaults
+	option syn_flood '1'
+	option input 'ACCEPT'
+	option output 'ACCEPT'
+	option forward 'ACCEPT'
+	option drop_invalid '1'
+
+config zone
+	option name 'lan'
+	option network 'lan'
+	option input 'ACCEPT'
+	option output 'ACCEPT'
+	option forward 'DROP'
+
+config zone
+	option name 'wan'
+	option output 'ACCEPT'
+	option forward 'ACCEPT'
+	option masq '1'
+	option mtu_fix '1'
+	option network '3G'
+	option input 'DROP'
+
+config rule
+	option name 'Allow-DHCP-Renew'
+	option src 'wan'
+	option proto 'udp'
+	option dest_port '68'
+	option target 'ACCEPT'
+	option family 'ipv4'
+
+config rule
+	option name 'Allow-Ping'
+	option src 'wan'
+	option proto 'icmp'
+	option icmp_type 'echo-request'
+	option family 'ipv4'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-DHCPv6'
+	option src 'wan'
+	option proto 'udp'
+	option src_ip 'fe80::/10'
+	option src_port '547'
+	option dest_ip 'fe80::/10'
+	option dest_port '546'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-ICMPv6-Input'
+	option src 'wan'
+	option proto 'icmp'
+	list icmp_type 'echo-request'
+	list icmp_type 'echo-reply'
+	list icmp_type 'destination-unreachable'
+	list icmp_type 'packet-too-big'
+	list icmp_type 'time-exceeded'
+	list icmp_type 'bad-header'
+	list icmp_type 'unknown-header-type'
+	list icmp_type 'router-solicitation'
+	list icmp_type 'neighbour-solicitation'
+	option limit '1000/sec'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-ICMPv6-Forward'
+	option src 'wan'
+	option dest '*'
+	option proto 'icmp'
+	list icmp_type 'echo-request'
+	list icmp_type 'echo-reply'
+	list icmp_type 'destination-unreachable'
+	list icmp_type 'packet-too-big'
+	list icmp_type 'time-exceeded'
+	list icmp_type 'bad-header'
+	list icmp_type 'unknown-header-type'
+	option limit '1000/sec'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config include
+	option path '/etc/firewall.user'
+
+config forwarding
+	option dest 'wan'
+	option src 'lan'
+
+config redirect
+	option target 'DNAT'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'tcp'
+	option src_dport '22'
+	option dest_ip '172.20.20.21'
+	option dest_port '22'
+	option name 'SSH to inside'
+
+config redirect
+	option target 'DNAT'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'tcp'
+	option src_dport '23'
+	option dest_ip '172.20.20.21'
+	option dest_port '23'
+	option name 'Telnet to inside'
+
+config redirect
+	option target 'DNAT'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'tcp'
+	option src_dport '80'
+	option dest_ip '172.20.20.21'
+	option dest_port '80'
+	option name 'HTTP to inside'
+
+config redirect
+	option target 'DNAT'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'tcp'
+	option src_dport '8080'
+	option dest_ip '172.20.20.21'
+	option dest_port '8080'
+	option name 'Port 8080 to inside'
+
+config redirect
+	option target 'DNAT'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'tcp'
+	option src_dport '2404'
+	option dest_ip '172.20.20.21'
+	option dest_port '2404'
+	option name 'Port 2404'
+
+config rule
+	option target 'ACCEPT'
+	option src 'wan'
+	option proto 'tcp'
+	option dest_port '8011'
+	option name 'Port 8011'
+
+config rule
+	option target 'ACCEPT'
+	option src 'wan'
+	option proto 'tcp'
+	option dest_port '2211'
+	option name 'Port 2211'
+
+config rule
+	option src 'wan'
+	option proto 'icmp'
+	option name 'Allow pings '
+	option target 'ACCEPT'
+
+config rule
+	option target 'ACCEPT'
+	option src 'wan'
+	option proto 'tcp'
+	option dest_port '1232'
+	option name 'Port 1232'
+
+config rule
+	option target 'ACCEPT'
+	option src 'wan'
+	option proto 'tcp'
+	option dest_port '1485'
+	option name 'Port 1485'
+
+config redirect
+	option target 'DNAT'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'udp'
+	option src_dport '1611'
+	option dest_ip '172.20.20.21'
+	option dest_port '161'
+	option name 'SNMP_ZIV'
+
+config redirect
+	option target 'DNAT'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'tcp udp'
+	option src_dport '7919'
+	option dest_ip '172.20.20.21'
+	option dest_port '7919'
+	option name 'ZIV_Manager'
+
+config redirect
+	option target 'DNAT'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'tcp udp'
+	option src_dport '40059'
+	option dest_ip '172.20.20.21'
+	option dest_port '40059'
+	option name 'ZIV_GW'
+
+config redirect
+	option target 'DNAT'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'tcp'
+	option dest_ip '172.20.20.24'
+	option name 'LVC_SSH'
+	option src_dport '50002'
+	option dest_port '22'
+
+config redirect
+	option target 'DNAT'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'tcp udp'
+	option src_dport '50003'
+	option dest_ip '172.20.20.24'
+	option dest_port '80'
+	option name 'LVC_HTTP'
+
+config redirect
+	option target 'DNAT'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'tcp udp'
+	option src_dport '50004'
+	option dest_ip '172.20.20.24'
+	option dest_port '443'
+	option name 'LVC_HTTPS'
+
+config redirect
+	option target 'DNAT'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'tcp udp'
+	option src_dport '50005'
+	option dest_ip '172.20.20.24'
+	option dest_port '8080'
+	option name 'LVC_HTTP_WS'
+
+package gpsd
+
+package httpclient
+
+config core 'default'
+	option Enabled 'yes'
+	option DownloadPath '/Activator/Sessionless/Httpserver.asp'
+	option EventsPath '/Activator/Sessionless/Sendevent.asp'
+	option ActivatorDownloadPath '/Activator/Sessionless/Httpserver.asp'
+	option InactivityTimeout '300'
+	option ConnectionRetries '3'
+	option SecureDownload 'no'
+	option PresentCertificateEnabled 'no'
+	option ValidateServerCertificateEnabled 'no'
+	option ServerCertificateField 'CN'
+	option ServerCertificateFieldValue 'Activator'
+	option ValidateServerCertificateFieldEnabled 'no'
+	list FileServer '172.18.236.97:80'
+	list SecureFileServer '172.18.236.97:443'
+	option CertificateFormat 'PEM'
+
+package iecd
+
+package luci
+
+config core 'main'
+	option lang 'auto'
+	option resourcebase '/luci-static/resources'
+	option mediaurlbase '/luci-static/bootstrap'
+	option audit_req '0'
+
+config extern 'flash_keep'
+	option uci '/etc/config/'
+	option dropbear '/etc/dropbear/'
+	option openvpn '/etc/openvpn/'
+	option passwd '/etc/passwd'
+	option opkg '/etc/opkg.conf'
+	option firewall '/etc/firewall.user'
+	option uploads '/lib/uci/upload/'
+
+config internal 'languages'
+	option en 'English'
+
+config internal 'sauth'
+	option sessionpath '/tmp/luci-sessions'
+	option sessiontime '3600'
+
+config internal 'ccache'
+	option enable '1'
+
+config internal 'themes'
+	option Bootstrap '/luci-static/bootstrap'
+
+package management_users
+
+config user
+	option enabled '1'
+	option username 'rsgw2024p'
+	option webuser 'yes'
+	option smsuser 'yes'
+	option linuxuser 'yes'
+	option hashpassword '$1$KFNMnodK$j4iUHNEBB6.mnN0TjrVv.1'
+
+package mobile
+
+config mobile 'CONFF'
+	option sms 'yes'
+	option temp_poll_interval_sec '61'
+	option sim1_custom_pre_init_at_string_timeout '10'
+	option sim2_custom_pre_init_at_string_timeout '10'
+	option sim1_custom_post_init_at_string_timeout '10'
+	option sim2_custom_post_init_at_string_timeout '10'
+	option cdma_ordered_registration_reboot_enabled '0'
+	option cdma_mob_term_home_registration_flag '1'
+	option cdma_mob_term_for_sid_registration_flag '1'
+	option cdma_mob_term_for_nid_registration_flag '1'
+
+config caller
+	option name 'EDP_1'
+	option number '351926090621'
+	option enabled 'yes'
+	option respond 'yes'
+
+config caller
+	option name 'EDP_2'
+	option number '351926090668'
+	option enabled 'yes'
+	option respond 'yes'
+
+package monitor
+
+config keepalive 'KEEPALIVE1'
+	option snmp_version '1'
+	option enabled '1'
+	option dev_reference 'NTP Server'
+	list monitor_ip '172.18.246.120'
+	option interval_min '2'
+
+config interface_stats 'stats'
+	option bin_period '1h'
+	option bin_cache_size '24'
+
+package multiwan
+
+package network
+
+config interface 'loopback'
+	option ifname 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config interface 'lan'
+	option ifname 'portA portB'
+	option type 'bridge'
+	option proto 'static'
+	option netmask '255.255.255.0'
+	option monitored '0'
+	option ipaddr '172.20.20.20'
+
+config interface '3G'
+	option proto '3g'
+	option sim '1'
+	option monitored '0'
+	option service_order 'auto'
+	option pdp_context '1'
+	option ipv4mode 'dhcp'
+	option ipv6mode 'none'
+	option auth '2'
+	option apn 'inovgrid'
+	option ifname 'rmnet_data0'
+
+package openvpn
+
+package openvpn_recipes
+
+config openvpn_recipe 'server_tun_ptp'
+	option _description 'Simple server configuration for a routed point-to-point VPN'
+	option _role 'server'
+	option dev 'tun'
+	option ifconfig '10.0.0.1 10.0.0.2'
+	option secret 'shared-secret.key'
+	option keepalive '10 60'
+	option comp_lzo '1'
+	option verb '3'
+	option mssfix '1420'
+	option management '127.0.0.1 31194'
+
+config openvpn_recipe 'client_tun_ptp'
+	option _description 'Simple client configuration for a routed point-to-point VPN'
+	option _role 'client'
+	option dev 'tun'
+	list remote 'vpnserver.example.org'
+	option ifconfig '10.0.0.2 10.0.0.1'
+	option secret 'shared-secret.key'
+	option nobind '1'
+	option comp_lzo '1'
+	option verb '3'
+	option management '127.0.0.1 31194'
+
+config openvpn_recipe 'server_tun'
+	option _description 'Server configuration for a routed multi-client VPN'
+	option _role 'server'
+	option dev 'tun'
+	option server '10.0.100.0 255.255.255.0'
+	option ca 'ca.crt'
+	option cert 'server.crt'
+	option key 'server.key'
+	option dh 'dh1024.pem'
+	option keepalive '10 60'
+	option comp_lzo '1'
+	option verb '3'
+	option mssfix '1420'
+	option management '127.0.0.1 31194'
+
+config openvpn_recipe 'client_tun'
+	option _description 'Client configuration for a routed multi-client VPN'
+	option _role 'client'
+	option client '1'
+	option dev 'tun'
+	list remote 'vpnserver.example.org'
+	option pkcs12 'my_client.p12'
+	option remote_cert_tls 'server'
+	option comp_lzo '1'
+	option nobind '1'
+	option persist_key '1'
+	option persist_tun '1'
+	option verb '3'
+	option reneg_sec '0'
+	option float '1'
+	option management '127.0.0.1 31194'
+
+config openvpn_recipe 'server_tap_bridge'
+	option _description 'Server configuration for an ethernet bridge VPN'
+	option _role 'server'
+	option dev 'tap'
+	option server_bridge '192.168.1.1 255.255.255.0 192.168.1.128 192.168.1.254'
+	option ca 'ca.crt'
+	option cert 'server.crt'
+	option key 'server.key'
+	option dh 'dh1024.pem'
+	option keepalive '10 60'
+	option comp_lzo '1'
+	option verb '3'
+	option mssfix '1420'
+	option management '127.0.0.1 31194'
+
+config openvpn_recipe 'client_tap_bridge'
+	option _description 'Client configuration for an ethernet bridge VPN'
+	option _role 'client'
+	option client '1'
+	option dev 'tap'
+	list remote 'vpnserver.example.org'
+	option ca 'ca.crt'
+	option cert 'my_client.crt'
+	option key 'my_client.key'
+	option dh 'dh1024.pem'
+	option remote_cert_tls 'server'
+	option comp_lzo '1'
+	option nobind '1'
+	option persist_key '1'
+	option verb '3'
+	option reneg_sec '0'
+	option float '1'
+	option management '127.0.0.1 31194'
+
+package ospfd
+
+package procrustes
+
+package ripd
+
+package snmpd
+
+config system
+	option sysName 'GW2124P'
+	option sysLocation 'Portugal'
+
+config agent
+	option enabled 'yes'
+	option agentaddress 'UDP:161'
+	option authtrapenabled 'no'
+	option link_updown_notify 'yes'
+
+config com2sec 'c2s_1'
+	option community 'public'
+	option secname 'sn_1'
+	option source 'default'
+
+config com2sec 'c2s_2'
+	option secname 'sn_2'
+	option source 'localhost'
+	option community 'private'
+
+config group 'grp_1_v1'
+	option group 'public'
+	option version 'v1'
+	option secname 'sn_1'
+
+config group 'grp_1_v2c'
+	option group 'public'
+	option version 'v2c'
+	option secname 'sn_1'
+
+config group 'grp_1_v3'
+	option group 'public'
+	option version 'usm'
+	option secname 'sn_1'
+
+config group 'grp_2_v1'
+	option group 'public'
+	option version 'v1'
+	option secname 'sn_2'
+
+config group 'grp_2_v2c'
+	option group 'public'
+	option version 'v2c'
+	option secname 'sn_2'
+
+config group 'grp_2_v3'
+	option group 'public'
+	option version 'usm'
+	option secname 'sn-2'
+
+config access 'grp_1_access'
+	option group 'public'
+	option context 'none'
+	option version 'any'
+	option level 'noauth'
+	option prefix 'exact'
+	option read 'all'
+	option write 'none'
+	option notify 'none'
+
+config access 'grp_2_access'
+	option group 'public'
+	option context 'none'
+	option version 'any'
+	option level 'noauth'
+	option prefix 'exact'
+	option read 'all'
+	option write 'all'
+	option notify 'all'
+
+package strongswan
+
+package system
+
+config system 'main'
+	option hostname 'FC-EREDES-GW2124P'
+	list banner ''
+	option conloglevel '8'
+	option cronloglevel '9'
+	option time_save_interval_min '15'
+	option log_hostname '%serial'
+	option log_file '/root/syslog.messages'
+	option log_size '400'
+	option log_type 'file'
+	option VA_Config_Name 'FC-EREDES-GW2124P-Default-v006'
+	option hashpassword '$1$OL34ss6O$pU70cRxca/llhB7n9wyKE/'
+	option passwd_hash_algo 'md5'
+	option zonename 'Europe/Lisbon'
+	option timezone 'WET0WEST,M3.5.0/1,M10.5.0'
+	option remoteloglevel '8'
+	option remotelogfacility 'default'
+	option audit_cfg '0'
+	option audit_shell '0'
+	option audit_interface '0'
+
+config timeserver 'ntp'
+	list server '172.18.246.120'
+	option interval_hours '1'
+
+package tservd
+
+config tservd 'main'
+	option enable '1'
+	option debug_ev_enable '1'
+	option log_severity '0'
+
+config port 'Port_RS232'
+	option devName '/dev/ttyUSB0'
+	option remote_ip1 '0.0.0.0'
+	option remote_ip2 '0.0.0.0'
+	option fwd_buffer_size '128'
+	option fwd_timeout '16'
+	option wsize '8'
+	option parity '0'
+	option stops '1'
+	option disc_time_ms '5000'
+	option server_mode '1'
+	option local_ip '0.0.0.0'
+	option tcp_keepalive_enabled '1'
+	option tcp_keepalive_interval '5'
+	option tcp_keepalive_timeout '2'
+	option tcp_keepalive_count '1'
+	option enable '1'
+	option listen_port '1232'
+	option speed '9600'
+	option fc_mode '0'
+	option portmode 'rs232'
+
+config port 'Port_RS485'
+	option devName '/dev/ttyUSB1'
+	option remote_ip1 '0.0.0.0'
+	option remote_ip2 '0.0.0.0'
+	option fwd_timeout '16'
+	option fwd_buffer_size '128'
+	option speed '9600'
+	option wsize '8'
+	option parity '0'
+	option stops '1'
+	option fc_mode '0'
+	option disc_time_ms '5000'
+	option local_ip '0.0.0.0'
+	option listen_port '1485'
+	option tcp_keepalive_enabled '1'
+	option tcp_keepalive_interval '5'
+	option tcp_keepalive_timeout '2'
+	option tcp_keepalive_count '1'
+	option enable '1'
+	option server_mode '1'
+	option portmode 'rs485hdx'
+
+package ubootenv
+
+package ucitrack
+
+config dep 'system'
+	list affects 'users'
+	list affects 'boot'
+	list affects 'chrony'
+
+config dep 'network'
+	option init 'network'
+	list affects 'qos'
+	list affects 'dhcp'
+	list affects 'strongswan'
+	list affects 'dropbear'
+	list affects 'firewall'
+	list affects 'chilli'
+	list affects 'mon_stats'
+
+config dep 'wireless'
+	list affects 'network'
+
+config dep 'dhcp'
+	option init 'dnsmasq'
+
+config dep 'dhcp_fwd'
+	option init 'dnsmasq'
+
+config dep 'dmvpn'
+	option init 'opennhrp'
+
+config dep 'br2684ctl'
+	option init 'br2684ctl'
+	list affects 'network'
+
+config dep 'update_password'
+	option init 'users'
+
+config dep 'monitor'
+	list affects 'mon_stats'
+	list affects 'mon_keepalive'
+	list affects 'mon_inventory'
+
+config dep 'coovachilli'
+	option init 'chilli'
+
+config dep 'upnpd'
+	option init 'miniupnpd'
+
+config dep 'strongswan'
+	option exec '/etc/init.d/strongswan restart'
+
+package uds
+
+package uhttpd
+
+config uhttpd 'main'
+	list listen_http '0.0.0.0:8011'
+	list listen_https '0.0.0.0:44311'
+	option home '/www'
+	option rfc1918_filter '1'
+	option cert '/etc/uhttpd.crt'
+	option key '/etc/uhttpd.key'
+	option cgi_prefix '/cgi-bin'
+	option script_timeout '60'
+	option network_timeout '30'
+	option config '/etc/http.conf'
+	option tls_version '1.2'
+
+config cert 'px5g'
+	option days '3650'
+	option bits '1024'
+	option country 'IE'
+	option state 'Dublin'
+	option location 'Dublin'
+	option commonname 'VirtualAccessGW'
+
+package va_eventd
+
+config va_eventd 'main'
+	option enabled 'no'
+	option event_queue_file '/tmp/event_buffer'
+	option event_queue_size '128K'
+
+package vrrp
+
+config vrrp 'main'
+	option enabled 'no'
+

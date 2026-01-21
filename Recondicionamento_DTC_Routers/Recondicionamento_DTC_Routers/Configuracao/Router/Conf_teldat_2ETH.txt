@@ -1,0 +1,304 @@
+p 4
+; Showing Menu and Submenus Configuration for access-level 15 ...
+; Regesta-Smart-LITE BASE UART USB_INTERNAL Router Version 11.01.10.45.02
+
+   log-command-errors
+   no configuration
+   description "E-REDES config: Router@PT Standard"
+;
+   add device direct-ip 1
+   add device bvi 1
+   set contact-person DORI-AEI-AAO
+   set data-link asdp uart1/0
+   set data-link asdp uart1/1
+   set data-link at cellular1/0
+   set data-link nic cellular1/1
+   set data-link nic cellular1/2
+   set hostname EREDES
+   set host-location Portugal
+   feature afs
+      enable
+   exit
+;
+   banner login "___________________________________________________________"
+   banner login " "
+   banner login "   E-REDES "
+   banner login "   Acesso Reservado "
+   banner login "   Acesso nao autorizado punido por lei "
+   banner login "___________________________________________________________"
+;
+   user admin hash-password $8$MrPz8VXmVcyt7k$srS/Yjllg9O01AfEJPxw6C4fr6qLl2euOA8nO.AhfDk
+;
+   global-profiles dial
+; -- Dial Profiles Configuration --
+      profile DIALER default
+      profile DIALER dialout
+      profile DIALER 3gpp-accessibility-control rx-timer 360s
+      profile DIALER 3gpp-profile-number 1
+      profile DIALER hold-queue 32
+;
+   exit
+;
+   network ethernet0/0
+; -- Ethernet Interface User Configuration --
+      description WAN---Bridge_with_LAN_(eth0/1)
+   exit
+;
+   network ethernet0/1
+; -- Ethernet Interface User Configuration --
+      description LAN---Bridge_with_WAN_(eth0/1)
+   exit
+;
+   network uart1/0
+; -- ASDP Interface Configuration --
+      description RS485
+      interface-buffer-size 128
+      local-port 1485
+      session-time 1d
+      idle-time 30s
+      serial-parameters mode half-duplex
+      serial-parameters termination-resistor enable
+      dtr-signal-ignored
+   exit
+;
+   network uart1/1
+; -- ASDP Interface Configuration --
+      description RS232
+      interface-buffer-size 128
+      local-port 1232
+      session-time 1d
+      idle-time 30s
+      dtr-signal-ignored
+   exit
+;
+   network cellular1/0
+; -- Interface AT. Configuration  --
+      coverage-timer 15
+      registration-apn inovgrid pdp-type ip
+;
+;
+      network domain cs+ps
+   exit
+;
+;
+   network direct-ip1
+; -- Generic Direct IP Encapsulation User Configuration --
+      ip address dhcp-negotiated
+;
+      base-interface
+; -- Base Interface Configuration --
+         base-interface cellular1/1 link
+         base-interface cellular1/1 profile DIALER
+;
+      exit
+;
+      direct-ip
+; -- Direct IP encapsulator user configuration --
+         address dhcp
+         authentication none
+      exit
+;
+   exit
+;
+;
+   network bvi1
+; -- Bridge Virtual Interface configuration --
+      ip address 172.20.20.20 255.255.255.0
+;
+   exit
+;
+   event
+; -- ELS Config --
+      enable trace subsystem NSLA ALL
+   exit
+;
+   set telnet
+; -- Telnet user configuration --
+      set port 2311
+      set max-telnets 5
+   exit
+;
+   feature http
+; -- HTTP user configuration --
+      port 8011
+   exit
+;
+;
+;
+;
+;
+;
+   protocol asrt
+; -- ASRT Bridge user configuration --
+      virtual-bridge 1
+; -- Virtual ASRT Bridge user configuration --
+         port ethernet0/0 1
+         port ethernet0/1 2
+         route-protocol ip
+      exit
+;
+      route-protocol ip
+   exit
+;
+;
+   protocol ip
+; -- Internet protocol user configuration --
+      route 0.0.0.0 0.0.0.0 direct-ip1
+;
+      nat
+         rule 1 out direct-ip1 static
+         rule 1 translation source tcp 172.20.20.21 22 direct-ip1 22
+;
+         rule 2 out direct-ip1 static
+         rule 2 translation source tcp 172.20.20.21 23 direct-ip1 23
+;
+         rule 3 out direct-ip1 static
+         rule 3 translation source tcp 172.20.20.21 80 direct-ip1 80
+;
+         rule 4 out direct-ip1 static
+         rule 4 translation source tcp 172.20.20.21 8080 direct-ip1 8080
+;
+         rule 5 out direct-ip1 static
+         rule 5 translation source tcp 172.20.20.21 2404 direct-ip1 2404
+;
+         rule 6 out direct-ip1 static
+         rule 6 translation source tcp 172.20.20.21 161 direct-ip1 1611
+;
+         rule 7 out direct-ip1 static
+         rule 7 translation source tcp 172.20.20.21 7919 direct-ip1 7919
+;
+         rule 8 out direct-ip1 static
+         rule 8 translation source tcp 172.20.20.21 40059 direct-ip1 40059
+;
+         rule 9 out direct-ip1 static
+         rule 9 translation source tcp 172.20.20.24 22 direct-ip1 50002
+;
+         rule 10 out direct-ip1 static
+         rule 10 translation source tcp 172.20.20.24 80 direct-ip1 50003
+;
+         rule 11 out direct-ip1 static
+         rule 11 translation source tcp 172.20.20.24 443 direct-ip1 50004
+;
+         rule 12 out direct-ip1 static
+         rule 12 translation source tcp 172.20.20.24 8080 direct-ip1 50005
+;
+         rule 1000 out direct-ip1 dynamic overload
+         rule 1000 translation source interface direct-ip1
+;
+      exit
+;
+   exit
+;
+;
+;
+;
+   feature ntp
+; -- NTP Protocol user configuration --
+      protocol
+      fast-poll-interval 32
+      peer address 1 172.18.246.120
+   exit
+;
+;
+   feature nsm
+; -- Network Service Monitor configuration --
+      operation 1
+; -- NSM Operation configuration --
+         type echo ipicmp 172.18.233.185
+         frequency 20
+         source-ipaddr 172.20.20.20
+      exit
+;
+      operation 2
+; -- NSM Operation configuration --
+         type echo ipicmp 172.18.233.186
+         frequency 20
+         source-ipaddr 172.20.20.20
+      exit
+;
+      operation 3
+; -- NSM Operation configuration --
+         type echo ipicmp 172.18.246.120
+         frequency 20
+         source-ipaddr 172.20.20.20
+      exit
+;
+      schedule 1 life forever
+      schedule 1 start-time after 1m
+      schedule 2 life forever
+      schedule 2 start-time after 1m
+      schedule 3 life forever
+      schedule 3 start-time after 1m
+   exit
+;
+   feature nsla
+; -- Feature Network Service Level Advisor --
+      enable
+;
+      filter 1 description ping_172.18.233.185
+      filter 1 nsm-op 1 rtt
+      filter 1 significant-samples 10
+      filter 1 activation threshold 1000
+      filter 1 activation sensibility 50
+      filter 1 activation stabilization-time 60
+      filter 1 deactivation threshold 500
+      filter 1 deactivation sensibility 50
+      filter 1 deactivation stabilization-time 15
+;
+      filter 2 description ping_172.18.233.186
+      filter 2 nsm-op 2 rtt
+      filter 2 significant-samples 10
+      filter 2 activation threshold 1000
+      filter 2 activation sensibility 50
+      filter 2 activation stabilization-time 60
+      filter 2 deactivation threshold 500
+      filter 2 deactivation sensibility 50
+      filter 2 deactivation stabilization-time 15
+;
+      filter 3 description ping_172.18.246.120
+      filter 3 nsm-op 3 rtt
+      filter 3 significant-samples 10
+      filter 3 activation threshold 1000
+      filter 3 activation sensibility 50
+      filter 3 activation stabilization-time 60
+      filter 3 deactivation threshold 500
+      filter 3 deactivation sensibility 50
+      filter 3 deactivation stabilization-time 15
+;
+      alarm 1 filter-id 1
+      alarm 1 and filter-id 2
+      alarm 1 and filter-id 3
+;
+      advisor 101 alarm-id 1
+;
+   exit
+;
+   feature ssh
+; -- SSH protocol configuration --
+
+      server
+; -- SSH Server --
+         port 2211
+         enable
+      exit
+;
+   exit
+;
+;
+   feature management
+; -- Management user configuration --
+      operation 10 system script 1
+      operation 10 track nsla-advisor 101
+;
+      script 1 commands root
+      script 1 commands "load immed yes"
+;
+;
+   exit
+;
+save
+y
+dump-command-errors
+end
+restart
+y

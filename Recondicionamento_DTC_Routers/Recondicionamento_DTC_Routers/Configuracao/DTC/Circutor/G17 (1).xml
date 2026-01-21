@@ -1,0 +1,74 @@
+<Report IdRpt="G17" IdPet="0" Version="3.4_EDP_2.0">
+	<Cnc Id="CIR2000000031">
+		<G17 Fh="20251023151916000S">
+			<Info Mod="Compact DC" Af="2020" Te="concentrator" Location="Compact DC" Vf="1.0.25s" VfComm="2228" Pro="ISDIP" Com="PLC" Bat="99" Macplc="00:80:E1:09:ED:E4" Pse="38400"/>
+			<Communications PrimeInyection="s3f" ipCom="172.20.20.21" ipMask="255.255.255.0" ipGtw="172.20.20.20" ipDhcp="N" ipLoc="192.168.1.100" ipMaskLoc="255.255.255.0" PrimaryDns="8.8.8.8" SecondaryDns="8.8.4.4" DhcpIdentifier=""/>
+			<Stg PortWS="8080" ResetMsg="Y" StgVersion="3.4_EDP_2.0" IPstg="198.19.255.1" RetryWS="0" TimeBetwWS="0" IPstg_2="172.18.233.6" IPstg_3="" ReportFormat="0" NumMeters="20" TimeSendReq="1800"/>
+			<Ftp IPftp="198.19.255.2" FTPUserReport="sa-inovaftp1" IPftpDCUpg="198.19.255.2" UserftpDCUpg="sa-inovaftp1" IPftpMeterUpg="198.19.255.2" UserftpMeterUpg="sa-inovaftp1" RetryFtp="5" TimeBetwFtp="300" IPftp_2="172.18.233.6" FTPUserReport_2="dtc" IPftp_3="" FTPUserReport_3="" FtpRandomDelay="5"/>
+			<Meters TimeOutMeterFwU="46800" TimeDisconMeter="2880" RetryDisconMeter="30" TimeRetryInterval="1800" RetryDisconMeterOrder="3" TimeRetryIntervalOrder="300" RetryDisconMeterFirm="10" TimeRetryIntervalFirm="360" MeterRegData="010000600100FF02010000600101FF02010000600102FF02010000600109FF02" S26Content="Pimp;AIa;L1v" ValuesCheckDelay="10" MaxOrderOutdate="86400" TimeDelayRestart="60" TimeActRetryTCP="5400" TimeTFRetryTCP="3600" TimePFRetryTCP="3600"/>
+			<Time IPNTP="172.18.246.120" NTPMaxDeviation="20" IPNTP2="" NTPRefreshPer="43200" SyncMeter="Y" TimeDev="30" TimeDevOver="600" TimeZone="Europe/London"/>
+			<Snmp SnmpVersion="1" SnmpPublic="public" SnmpPrivate="private" TrapCommunity="public" TrapAddress="" SnmpUser=""/>
+			<Cycles IPftpCycles="" UserftpCycles="" DestDirCycles="" PrefixCycles=""/>
+			<Topology TopologyLog="N" NameTopology="" IpFtpTopology="" DestDirTopology="" UserFtpTopology="" MaxLinesTopology="50" TimeWaitTopology="300"/>
+			<Frames FrameLogMode="0" NameFrames="" IpFtpFrames="" DestDirFrames="" UserFtpFrames="" MaxLinesFrames="5000" TimeWaitFrames="7200"/>
+			<Access AccInacTimeout="30" AccSimulMax="5" AuthenticationType="0" IpTacacs1="" IpTacacs2="" AuthRetry="1" AuthRetryInterval="10"/>
+			<EDP BNodeStatus="Y" DataCollectMode="0" CompactDataValidation="1" hesKeyMngTimeout="3600" UnLowerTh="0.70" UnUpperTh="1.15" CurUlTh="0.00" CurOlTh="100.00" DataCollectDepth="7" G03Capture="3600" G04Capture="3600" G05Capture="3600" G06Capture="3600" MeasureCST="0"  AddressSRV60870="1"/>
+			<Others Slave1="" Slave2="" Slave3="" TaskScheduler="Y" Priority="Y" ResetRandomDelay="10"/>
+			<TP TpTar="1" TpPrio="1" TpHi="20231202234500000W" TpPer="00000007000000" TpCompl="N" TpMet="">
+				<TpPro TpReq="T01" TpSend="N" TpHESDest="1" TpStore="N">
+					<TpAttr/>
+				</TpPro>
+			</TP>
+			<TP TpTar="2" TpPrio="2" TpHi="20231202234000000W" TpPer="00000001000000" TpCompl="N" TpMet="">
+				<TpPro TpReq="T02" TpSend="N" TpHESDest="1" TpStore="N">
+					<TpAttr/>
+				</TpPro>
+			</TP>
+			<TP TpTar="5" TpPrio="7" TpHi="20231202013000000W" TpPer="00000001000000" TpCompl="Y" TpMet="">
+				<TpPro TpReq="S5B" TpSend="Y" TpHESDest="1" TpStore="Y">
+					<TpAttr/>
+				</TpPro>
+			</TP>
+			<TP TpTar="6" TpPrio="8" TpHi="20231203100000000W" TpPer="00000028000000" TpCompl="N" TpMet="">
+				<TpPro TpReq="S06" TpSend="Y" TpHESDest="1" TpStore="Y">
+					<TpAttr/>
+				</TpPro>
+			</TP>
+			<TP TpTar="9" TpPrio="7" TpHi="20231202020000000W" TpPer="00000001000000" TpCompl="Y" TpMet="">
+				<TpPro TpReq="S09" TpSend="Y" TpHESDest="1" TpStore="Y">
+					<TpAttr QueryID="Q1" EvGroup="1,2,3,4,5" EvCode=""/>
+				</TpPro>
+			</TP>
+			<TP TpTar="11" TpPrio="6" TpHi="20231202003000000W" TpPer="00000001000000" TpCompl="N" TpMet="">
+				<TpPro TpReq="T11" TpSend="N" TpHESDest="1" TpStore="N">
+					<TpAttr/>
+				</TpPro>
+			</TP>
+			<TP TpTar="29" TpPrio="7" TpHi="20231202014500000W" TpPer="00000001000000" TpCompl="Y" TpMet="">
+				<TpPro TpReq="S29" TpSend="Y" TpHESDest="1" TpStore="Y">
+					<TpAttr/>
+				</TpPro>
+			</TP>
+			<FilterCnt/>
+			<AdditionalInfo>
+				<Parameter Group="Communications" Key="PortSSH" Value="22" />
+				<Parameter Group="Stg" Key="StgTimeout" Value="6" />
+				<Parameter Group="Meters" Key="UsePassive" Value="N" />
+				<Parameter Group="Others" Key="DoubleSecondary" Value="N" />
+				<Parameter Group="Others" Key="SecondaryMode" Value="0" />
+				<Parameter Group="Others" Key="SnifferTCP" Value="N" />
+				<Parameter Group="Others" Key="SnifferOptionalTCP" Value="N" />
+				<Parameter Group="Others" Key="TopologyTCP" Value="N" />
+				<Parameter Group="Others" Key="IpTCP" Value="" />
+				<Parameter Group="Others" Key="PortTCP" Value="0" />
+				<Parameter Group="Others" Key="FuPort" Value="0" />
+			</AdditionalInfo>
+			<BL/>
+			<Module Id="CIR0005632391" Mod="PSU-STD" Type="Supply" Version="0" Slot="1"/>
+			<Module Id="CIR0005422428" Mod="PLC1" Type="PLC" Version="0" Slot="3"/>
+			<Module Id="CIR2082048100" Mod="SBT" Type="SBT" Version="0" Slot="4"/>
+			<Module Id="CIR0005640631" Mod="InOut" Type="InOut" Version="0" Slot="5"/>
+			<Firewall/>
+		</G17>
+	</Cnc>
+</Report>

@@ -1,0 +1,115 @@
+
+restore
+set /main/timezone Lisbon
+set /admin/web/http on
+set /admin/web/httpport 8011
+set /admin/web/httpsport 44311
+set /admin/shell/telnetport 2311
+set /admin/shell/sshport 2211
+set /admin/reset/enable on
+set /lan/vif[1]/ip 172.20.20.20
+set /wan/cell0/enable on
+set /wan/cell0/primsim SIMA
+set /wan/cell0/dns_req off
+set /wan/cell0/apn inovgrid
+set /wan/cell0/auth none
+set /wan/cell0/num_sms_srv_addr +351962100000
+add /wan/smsat/wlist
+add /wan/smsat/wlist
+set /wan/smsat/wlist[1]/number +351926090668
+set /wan/smsat/wlist[1]/enable on
+set /wan/smsat/wlist[2]/number +351926090621
+set /wan/smsat/wlist[2]/enable on
+add /nat
+add /nat
+add /nat
+add /nat
+add /nat
+add /nat
+add /nat
+add /nat
+add /nat
+add /nat
+add /nat
+set /nat[1]/destination cell0
+set /nat[1]/service tcp:80
+set /nat[1]/torigin 172.20.20.20
+set /nat[1]/tdestination 172.20.20.21
+set /nat[1]/tdestport 80
+set /nat[1]/descr HTTP
+set /nat[2]/destination cell0
+set /nat[2]/service tcp:8080
+set /nat[2]/torigin 172.20.20.20
+set /nat[2]/tdestination 172.20.20.21
+set /nat[2]/tdestport 8080
+set /nat[2]/descr "HTTP web Serv"
+set /nat[3]/destination cell0
+set /nat[3]/service tcp:22
+set /nat[3]/torigin 172.20.20.20
+set /nat[3]/tdestination 172.20.20.21
+set /nat[3]/tdestport 22
+set /nat[3]/descr SSH
+set /nat[4]/destination cell0
+set /nat[4]/service tcp:23
+set /nat[4]/torigin 172.20.20.20
+set /nat[4]/tdestination 172.20.20.21
+set /nat[4]/tdestport 23
+set /nat[4]/descr Telnet
+set /nat[5]/destination cell0
+set /nat[5]/service tcp:1611
+set /nat[5]/torigin 172.20.20.20
+set /nat[5]/tdestination 172.20.20.21
+set /nat[5]/tdestport 161
+set /nat[5]/descr SNMP
+set /nat[6]/destination cell0
+set /nat[6]/service tcp:2404
+set /nat[6]/tdestination 172.20.20.21
+set /nat[6]/tdestport 2404
+set /nat[6]/descr IEC104
+set /nat[7]/destination cell0
+set /nat[7]/service tcp:7919
+set /nat[7]/torigin 172.20.20.20
+set /nat[7]/tdestination 172.20.20.21
+set /nat[7]/tdestport 7919
+set /nat[7]/descr "Prime Manager"
+set /nat[8]/destination cell0
+set /nat[8]/service tcp:50002
+set /nat[8]/torigin 172.20.20.20
+set /nat[8]/tdestination 172.20.20.24
+set /nat[8]/tdestport 22
+set /nat[8]/descr LVC_SSH
+set /nat[9]/destination cell0
+set /nat[9]/service tcp:50003
+set /nat[9]/torigin 172.20.20.20
+set /nat[9]/tdestination 172.20.20.24
+set /nat[9]/tdestport 80
+set /nat[9]/descr LVC_HTTP
+set /nat[10]/destination cell0
+set /nat[10]/service tcp:50004
+set /nat[10]/torigin 172.20.20.20
+set /nat[10]/tdestination 172.20.20.24
+set /nat[10]/tdestport 443
+set /nat[10]/descr LVC_HTTPS
+set /nat[11]/destination cell0
+set /nat[11]/service tcp:50005
+set /nat[11]/torigin 172.20.20.20
+set /nat[11]/tdestination 172.20.20.24
+set /nat[11]/tdestport 8080
+set /nat[11]/descr LVC_HTTP_WS
+set /ntp/enable on
+set /ntp/client/server[1]/ip 172.18.246.120
+set /snmp/enable on
+set /flow/physical[2]/id serial1
+add /flow/virtual/passivetcp
+add /flow/virtual/passivetcp
+set /flow/virtual/passivetcp[1]/port 1485
+set /flow/virtual/passivetcp[1]/inactivity_time 3:00.000000000
+set /flow/virtual/passivetcp[2]/id passivetcp1
+set /flow/virtual/passivetcp[2]/port 1232
+set /flow/virtual/passivetcp[2]/inactivity_time 3:00.000000000
+add /flowconnection/connection
+add /flowconnection/connection
+set /flowconnection/connection[1]/flow1 serial0
+set /flowconnection/connection[1]/flow2 passivetcp0
+set /flowconnection/connection[2]/flow1 serial1
+set /flowconnection/connection[2]/flow2 passivetcp1

@@ -1,0 +1,45 @@
+<Report IdRpt="S12" IdPet="0" Version="3.4_EDP_2.0">
+	<Cnc Id="CIR2000000031">
+		<S12 Fh="20251023151848000S" Mod="Compact DC" Af="2020" Te="concentrator" ModelCode="0000" Vf="1.0.25s" VfComm="2228" Pro="ISDIP" Com="PLC" Bat="99" ipCom="172.20.20.21" PortWS="8080" ipMask="255.255.255.0" ipGtw="172.20.20.20" ipDhcp="N" Slave1="" Slave2="" Slave3="" ipLoc="192.168.1.100" ipMaskLoc="255.255.255.0" Macplc="00:80:E1:09:ED:E4" Pse="38400" Priority="Y" IPstg="198.19.255.1" IPNTP="172.18.246.120" IPftp="198.19.255.2" FTPUserReport="sa-inovaftp1" IPftpDCUpg="198.19.255.2" UserftpDCUpg="sa-inovaftp1" IPftpMeterUpg="198.19.255.2" UserftpMeterUpg="sa-inovaftp1" RetryFtp="5" TimeBetwFtp="300" IPftpCycles="" UserftpCycles="" DestDirCycles="" SyncMeter="Y" TimeOutMeterFwU="46800" TimeDevOver="600" TimeDev="30" ResetMsg="Y" NumMeters="20" TimeSendReq="1800" TimeDisconMeter="172800" RetryDisconMeter="30" TimeRetryInterval="1800" RetryDisconMeterOrder="3" TimeRetryIntervalOrder="300" RetryDisconMeterFirm="10" TimeRetryIntervalFirm="360"  MeterRegData="010000600100FF02010000600101FF02010000600102FF02010000600109FF02" ReportFormat="0" S26Content="Pimp;AIa;L1v" ValuesCheckDelay="10" MaxOrderOutdate="86400" TimeDelayRestart="60" NTPMaxDeviation="20" AccInacTimeout="30" AccSimulMax="5" AuthIP="" AuthRetry="1" AuthRetryInterval="10" BNodeStatus="Y" TimetoInactivePRIME="2880" TimetoInactiveGPRS="4320" TimetoInactiveRS485="1440" NoPowerUpperTh="80" NoPowerLowerTh="60" MinMetersNoPower="30" PhUnbVTm="15.00" PhUnbVTv="10.00" PhUnbVTd="10" PhUnbITi="100.00" PhUnbVmin="115" DataCollectMode="0" CompactDataValidation="1" TPId="1" PTDId="1106D1470400" Latitude="0.000000" Longitude="0.000000" TPMaxPower="1000" OverloadAlarmTh="100.00" CurrentRatio="200.00" NTPRefreshPer="43200" RemoteTimeoutF="7200" HESKeyMngTimeout="3600" MaxQueueNum="20" FtpRandomDelay="5" UnLowerTh="0.70" UnUpperTh="1.15" CurUlTh="0.00" CurOlTh="100.00"  TimeActRetryTCP="5400" TimeTFRetryTCP="3600" TimePFRetryTCP="3600" DataCollectDepth="7" G03Capture="3600" G04Capture="3600" G05Capture="3600" G06Capture="3600" MeasureCST="0" AddressSRV60870="1" TimeZone="Europe/London">
+			<TP TpTar="1" TpPrio="1" TpHi="20231202234500000W" TpPer="00000007000000" TpCompl="N" TpMet="">
+				<TpPro TpReq="T01" TpSend="N" TpHESDest="1" TpStore="N">
+					<TpAttr/>
+				</TpPro>
+			</TP>
+			<TP TpTar="2" TpPrio="2" TpHi="20231202234000000W" TpPer="00000001000000" TpCompl="N" TpMet="">
+				<TpPro TpReq="T02" TpSend="N" TpHESDest="1" TpStore="N">
+					<TpAttr/>
+				</TpPro>
+			</TP>
+			<TP TpTar="5" TpPrio="7" TpHi="20231202013000000W" TpPer="00000001000000" TpCompl="Y" TpMet="">
+				<TpPro TpReq="S5B" TpSend="Y" TpHESDest="1" TpStore="Y">
+					<TpAttr/>
+				</TpPro>
+			</TP>
+			<TP TpTar="6" TpPrio="8" TpHi="20231203100000000W" TpPer="00000028000000" TpCompl="N" TpMet="">
+				<TpPro TpReq="S06" TpSend="Y" TpHESDest="1" TpStore="Y">
+					<TpAttr/>
+				</TpPro>
+			</TP>
+			<TP TpTar="9" TpPrio="7" TpHi="20231202020000000W" TpPer="00000001000000" TpCompl="Y" TpMet="">
+				<TpPro TpReq="S09" TpSend="Y" TpHESDest="1" TpStore="Y">
+					<TpAttr>
+						<QueryID>Q1</QueryID>
+						<Parameters>EvGroup:1,2,3,4,5;EvCode:</Parameters>
+					</TpAttr>
+				</TpPro>
+			</TP>
+			<TP TpTar="11" TpPrio="6" TpHi="20231202003000000W" TpPer="00000001000000" TpCompl="N" TpMet="">
+				<TpPro TpReq="T11" TpSend="N" TpHESDest="1" TpStore="N">
+					<TpAttr/>
+				</TpPro>
+			</TP>
+			<TP TpTar="29" TpPrio="7" TpHi="20231202014500000W" TpPer="00000001000000" TpCompl="Y" TpMet="">
+				<TpPro TpReq="S29" TpSend="Y" TpHESDest="1" TpStore="Y">
+					<TpAttr/>
+				</TpPro>
+			</TP>
+			<cycles/>
+		</S12>
+	</Cnc>
+</Report>
