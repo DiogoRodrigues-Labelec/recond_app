@@ -767,20 +767,20 @@ namespace Recondicionamento_DTC_Routers.UI
             string idMeters = Configuration.configurationValues.ns_emi;
 
             var soap = $@"<?xml version=""1.0"" encoding=""utf-8""?>
-<s:Envelope xmlns:s=""http://schemas.xmlsoap.org/soap/envelope/"">
-  <s:Header/>
-  <s:Body>
-    <Request xmlns:i=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.asais.fr/ns/Saturne/DC/ws"">
-      <IdPet>7190</IdPet>
-      <IdRpt>{idRpt}</IdRpt>
-      <tfStart/>
-      <tfEnd/>
-      <IdMeters>{idMeters}</IdMeters>
-      <Priority>1</Priority>
-      <IdDC>{idDc}</IdDC>
-    </Request>
-  </s:Body>
-</s:Envelope>";
+                <s:Envelope xmlns:s=""http://schemas.xmlsoap.org/soap/envelope/"">
+                  <s:Header/>
+                  <s:Body>
+                    <Request xmlns:i=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.asais.fr/ns/Saturne/DC/ws"">
+                      <IdPet>7190</IdPet>
+                      <IdRpt>{idRpt}</IdRpt>
+                      <tfStart/>
+                      <tfEnd/>
+                      <IdMeters>{idMeters}</IdMeters>
+                      <Priority>1</Priority>
+                      <IdDC>{idDc}</IdDC>
+                    </Request>
+                  </s:Body>
+                </s:Envelope>";
 
             using var http = new HttpClient();
             using var content = new StringContent(soap, Encoding.UTF8, "text/xml");
@@ -947,19 +947,37 @@ namespace Recondicionamento_DTC_Routers.UI
         {
             wait.Until(d => d.PageSource.Length > 2000);
 
+            const string NBSP = "\u00A0";
+
             foreach (var label in labels)
             {
                 if (string.IsNullOrWhiteSpace(label)) continue;
 
-                // tenta estrutura típica: <td>Firmware version</td><td>VALOR</td>
-                var el =
-                    TryFind(driver, By.XPath($"//td[normalize-space()='{label}']/following-sibling::td[1]")) ??
-                    TryFind(driver, By.XPath($"//th[normalize-space()='{label}']/following-sibling::td[1]")) ??
-                    TryFind(driver, By.XPath($"//*[normalize-space()='{label}']/following-sibling::*[1]"));
+                string wanted = label.Trim();
+
+                // 1) Procura a linha cujo 1º td (label) coincide, tratando NBSP como espaço
+                // 2) Devolve a última td não vazia dessa linha (no teu caso é td[3])
+                var el = TryFind(driver, By.XPath(
+                    $"//tr[td and normalize-space(translate(td[1], '{NBSP}', ' '))='{wanted}']" +
+                    $"/td[normalize-space(translate(., '{NBSP}', ' '))!=''][last()]"
+                ));
 
                 if (el != null)
                 {
-                    var txt = (el.Text ?? "").Trim();
+                    var txt = (el.Text ?? "").Replace('\u00A0', ' ').Trim();
+                    if (!string.IsNullOrWhiteSpace(txt))
+                        return txt;
+                }
+
+                // fallback: match por "contém" (para casos tipo "Firmware version" / variações)
+                el = TryFind(driver, By.XPath(
+                    $"//tr[td and contains(normalize-space(translate(td[1], '{NBSP}', ' ')), '{wanted}')]" +
+                    $"/td[normalize-space(translate(., '{NBSP}', ' '))!=''][last()]"
+                ));
+
+                if (el != null)
+                {
+                    var txt = (el.Text ?? "").Replace('\u00A0', ' ').Trim();
                     if (!string.IsNullOrWhiteSpace(txt))
                         return txt;
                 }
@@ -967,6 +985,7 @@ namespace Recondicionamento_DTC_Routers.UI
 
             return "";
         }
+
 
 
         #endregion
