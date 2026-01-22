@@ -44,6 +44,7 @@ namespace Recondicionamento_DTC_Routers.UI
         private Button _btnReportAppend;
         private Button _btnReportNew;
         private Label _lblReportPath;
+        private Button _btnAddManual;
 
         private string _currentReportPath;
 
@@ -258,6 +259,10 @@ namespace Recondicionamento_DTC_Routers.UI
             wrap.Controls.Add(buttons, 2, 0);
             wrap.SetRowSpan(buttons, 2);
 
+            _btnAddManual = new Button { Text = "Adicionar manual", Width = 170, Height = 34 };
+            _btnAddManual.Click += (_, __) => AddManualRouterToReport();
+            buttons.Controls.Add(_btnAddManual);
+
             return wrap;
         }
 
@@ -427,7 +432,26 @@ namespace Recondicionamento_DTC_Routers.UI
                 DoUploadConfigAsync = async (fab, ct) =>
                 {
                     var uploader = new UploadConfiguration(sink);
-                    return await uploader.ROUTER(fab, ct);
+
+                    // 1) faz upload
+                    var ok = await uploader.ROUTER(fab, ct);
+
+                    // 2) se o upload foi OK, espera o router voltar (normalmente reboot/aplica config)
+                    if (ok)
+                    {
+                        await _logger.LogAsync("A aguardar router voltar a responder após carregar configuração...", toFile: true);
+
+                        await WaitPingBackAsync(
+                            Configuration.configurationValues.ip,
+                            initialDelaySeconds: 120,   // dá tempo para começar reboot
+                            timeoutSeconds: 480,       // 8 min
+                            ct: ct
+                        );
+
+                        await _logger.LogAsync("Router voltou a responder após carregar configuração.", toFile: true);
+                    }
+
+                    return ok;
                 },
 
                 TestRS232Async = async () => await TestRS232(log: true),
@@ -1321,6 +1345,41 @@ namespace Recondicionamento_DTC_Routers.UI
 
             await _logger.LogAsync($"⚠️ Timeout: ping não voltou em {timeoutSeconds}s ({ip}).", toFile: true);
         }
+
+
+        private void AddManualRouterToReport()
+        {
+            try
+            {
+                var r = RouterManualEntryForm.Capture(this);
+                if (r == null) return;
+
+                var resultados = Configuration.GetResultadosDir();
+
+                // se ainda não tens report selecionado, usa o default
+                _currentReportPath ??= System.IO.Path.Combine(resultados, "report.html");
+
+                // lê lista existente e adiciona
+                var lista = RouterHtmlHelper.LerHtmlParaLista(_currentReportPath)
+                            ?? new System.Collections.Generic.List<RouterReportEntry>();
+
+                lista.Add(new RouterReportEntry
+                {
+                    Timestamp = DateTime.Now,
+                    Record = r
+                });
+
+                RouterHtmlHelper.EscreverHtmlInterativo(lista, _currentReportPath);
+
+                UpdateReportLabel();
+                ShowInfoLocal("Report", $"Entrada manual adicionada em:\n{_currentReportPath}");
+            }
+            catch (Exception ex)
+            {
+                ShowWarnLocal("Manual", $"Erro ao adicionar entrada manual: {ex.Message}");
+            }
+        }
+
 
         #endregion
     }

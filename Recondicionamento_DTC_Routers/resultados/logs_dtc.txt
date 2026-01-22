@@ -4858,3 +4858,105 @@ FW old: 3.23.99.1.baac1e69
 ====================
 Upload config DTC ZIV: C:\Users\diogo\Desktop\recond_v2\recond_app\Recondicionamento_DTC_Routers\Recondicionamento_DTC_Routers\Configuracao\DTC\ZIV\config_ZIV.txt
 
+
+====================
+2026-01-21 16:27:13
+====================
+Config DTC ZIV enviada: config_ZIV.txt
+
+
+====================
+2026-01-21 16:27:13
+====================
+Upload config OK
+
+
+====================
+2026-01-21 16:27:13
+====================
+[06] Upload configurações (E-REDES) - OK
+
+
+====================
+2026-01-21 16:27:13
+====================
+[07] S01 DTC: Tensões/Correntes (WS) - START
+
+
+====================
+2026-01-21 16:27:14
+====================
+WS_DC idRpt=S01 idDc=ZIV1804443592 status=200
+
+
+====================
+2026-01-21 16:29:21
+====================
+S01(DTC) idDc=ZIV1804443592 httpOk=True userOk=False
+
+
+====================
+2026-01-21 16:29:21
+====================
+S01(DTC) -> False
+
+
+====================
+2026-01-21 16:29:21
+====================
+[07] S01 DTC: Tensões/Correntes (WS) - FAIL: S01(DTC) FAIL
+
+
+====================
+2026-01-21 16:29:21
+====================
+[08] S01 EMI PLC: Instantâneos (WS) - START
+
+
+====================
+2026-01-21 16:29:21
+====================
+EMI PLC: emiIdDc não definido em config -> SKIP lógico.
+
+
+====================
+2026-01-21 16:29:21
+====================
+S01(EMI) -> True
+
+
+====================
+2026-01-21 16:29:21
+====================
+[08] S01 EMI PLC: Instantâneos (WS) - OK
+
+
+====================
+2026-01-21 16:29:21
+====================
+[09] Adicionar ao report - START
+
+
+====================
+2026-01-21 16:29:23
+====================
+Report atualizado.
+
+
+====================
+2026-01-21 16:29:23
+====================
+[09] Adicionar ao report - OK
+
+
+====================
+2026-01-21 16:29:23
+====================
+=== FIM WORKFLOW DTC | Conformidade: NÃO CONFORME ===
+
+
+====================
+2026-01-21 16:29:23
+====================
+UI atualizada. Conformidade final: NÃO CONFORME
+
