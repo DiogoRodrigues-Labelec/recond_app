@@ -3,7 +3,10 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
 using Recondicionamento_DTC_Routers.Services;
+using Renci.SshNet;
 using System;
+using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -107,363 +110,220 @@ namespace Recondicionamento_DTC_Routers.helpers
 
         private async Task TELDAT(CancellationToken ct)
         {
-            // ===== Paths locais (mantém a tua estrutura) =====
             string baseDir = Path.Combine(
                 Configuration.configurationValues.Path_ConfigFW,
                 @"Firmware\Routers\Teldat - 11.01.10.45.03\rs3g_1101104503_standard"
             );
 
             string localBios = Path.Combine(baseDir, "bmips34k.bin");
-            string localFw = Path.Combine(baseDir, "fw00001d.bfw");
             string localCit = Path.Combine(baseDir, "rs3g.bin");
+            string localFw01c = Path.Combine(baseDir, "fw00001c.bfw");
+            string localFw01d = Path.Combine(baseDir, "fw00001d.bfw");
 
             if (!File.Exists(localBios)) throw new FileNotFoundException("BIOS não encontrado", localBios);
-            if (!File.Exists(localFw)) throw new FileNotFoundException("FW não encontrado", localFw);
             if (!File.Exists(localCit)) throw new FileNotFoundException("CIT não encontrado", localCit);
 
-            // ===== Credenciais =====
             string ftpIp = Configuration.configurationValues.ip;
-            int ftpPort = 21; // normalmente 21; muda se o teu router usar outro
+            int ftpPort = 21;
             string ftpUser = Configuration.configurationValues.routerUser;
             string ftpPass = Configuration.configurationValues.routerPass;
 
-            // ===== Config FTP (timeouts “largos” p/ aguentar SAVEBUFFER) =====
             var cfg = new FtpConfig
             {
                 ConnectTimeout = 20000,
-                ReadTimeout = 140000,                 // >= 100s recomendado p/ comandos demorados
+                ReadTimeout = 140000,
                 DataConnectionConnectTimeout = 20000,
                 DataConnectionReadTimeout = 140000,
 
-                // Preferir ACTIVE/PORT (manual menciona issues quando não envolve porta 20)
+                // força ACTIVE/PORT
                 DataConnectionType = FtpDataConnectionType.PORT,
 
-                // Evitar surpresas
                 SocketKeepAlive = true,
                 NoopInterval = 10,
+
+                // evita retries internos
+                RetryAttempts = 0,
             };
 
             using var client = new FtpClient(ftpIp, ftpUser, ftpPass, ftpPort, cfg);
 
-            await _log.LogAsync($"[TELDAT] FTP connect {ftpIp}:{ftpPort} as '{ftpUser}'");
-            ct.ThrowIfCancellationRequested();
-
             try
             {
+                ct.ThrowIfCancellationRequested();
+                await _log.LogAsync($"[TELDAT] FTP connect {ftpIp}:{ftpPort} user='{ftpUser}'");
+
                 client.Connect();
                 await _log.LogAsync("[TELDAT] Connected");
 
-                // Binary mode (equivalente ao "bin"/TYPE I)
-                client.Execute("TYPE I");
-                await _log.LogAsync("[TELDAT] TYPE I (binary) OK");
+                // bin
+                await ExecCmdLogAsync(client, "TYPE I", "TYPE", ct);
 
-                // Para não renomear automaticamente (se estiver ON no router)
-                client.Execute("SITE CHECK RENAME OFF");
-                await _log.LogAsync("[TELDAT] SITE CHECK RENAME OFF");
+                // não renomear automaticamente
+                await ExecCmdLogAsync(client, "SITE CHECK RENAME OFF", "CHECK RENAME", ct);
 
-                // ===== Descobrir nome do CIT atual (recomendação do manual p/ não ficar com 2 CITs) =====
-                string remoteCitName = "/" + Path.GetFileName(localCit); // fallback
+                // (opcional) apagar buffer após savebuffer para não ficar “preso”
+                // se isto falhar, ignoramos
+                try { await ExecCmdLogAsync(client, "SITE CHECK DELETE ON", "CHECK DELETE", ct); } catch { }
+
+                // Nome do CIT ativo (para sobrescrever e não ficar com 2 BINs)
+                string remoteCitName = "appcode1.bin";
                 try
                 {
                     var rep = client.Execute("SITE GETAPPNAME");
-                    string msg = (rep.InfoMessages ?? "") + " " + (rep.Message ?? "");
-                    // tenta apanhar algo tipo "appcode1.bin" / "*.bin"
+                    string msg = ((rep.InfoMessages ?? "") + " " + (rep.Message ?? "")).Trim();
                     var m = Regex.Match(msg, @"([A-Za-z0-9_\-]+\.bin)\b", RegexOptions.IgnoreCase);
-                    if (m.Success)
-                    {
-                        remoteCitName = "/" + m.Groups[1].Value;
-                        await _log.LogAsync($"[TELDAT] SITE GETAPPNAME -> '{m.Groups[1].Value}' (vou fazer upload do CIT para este nome)");
-                    }
-                    else
-                    {
-                        await _log.LogAsync($"[TELDAT] SITE GETAPPNAME sem nome *.bin (vou usar '{remoteCitName}')");
-                    }
+                    if (m.Success) remoteCitName = m.Groups[1].Value;
+                    await _log.LogAsync($"[TELDAT] SITE GETAPPNAME -> vou gravar CIT como '{remoteCitName}'");
                 }
                 catch (Exception ex)
                 {
-                    await _log.LogAsync($"[TELDAT] WARN: falhou SITE GETAPPNAME ({ex.Message}). Vou usar '{remoteCitName}'.");
+                    await LogExceptionChainAsync("[TELDAT] GETAPPNAME", ex);
+                    await _log.LogAsync($"[TELDAT] GETAPPNAME falhou; vou usar '{remoteCitName}'");
                 }
 
-                // ====== 1) Upload BIOS ======
-                ct.ThrowIfCancellationRequested();
-                await _log.LogAsync($"[TELDAT] Sending BIOS: {Path.GetFileName(localBios)} -> /{Path.GetFileName(localBios)}");
-                client.UploadFile(localBios, "/" + Path.GetFileName(localBios), FtpRemoteExists.Overwrite, false, FtpVerify.None);
-                await _log.LogAsync("[TELDAT] Sent BIOS (bmips34k.bin)");
+                // ===== BIOS =====
+                await SendFileWithSavebufferAsync(client, localBios, "bmips34k.bin", "BIOS", ct);
 
-                // ====== 2) SAVEBUFFER BIOS (pode demorar / “parecer” disconnect) ======
-                ct.ThrowIfCancellationRequested();
-                try
-                {
-                    var rep = client.Execute("SITE SAVEBUFFER");
-                    await _log.LogAsync($"[TELDAT] BIOS: OK SITE SAVEBUFFER ({rep.Code}), waiting 4000ms");
-                }
-                catch (Exception ex)
-                {
-                    // Manual: alguns clientes cortam / acham que caiu durante SAVEBUFFER — tenta reconectar e seguir
-                    await _log.LogAsync($"[TELDAT] BIOS: WARN SAVEBUFFER exception -> {ex.Message}");
-                    try
-                    {
-                        if (client.IsConnected) client.Disconnect();
-                    }
-                    catch { }
+                // ===== Firmwares (se quiseres mesmo enviar) =====
+                // IMPORTANTE: nome remoto = só filename, sem "/"
+                if (File.Exists(localFw01c))
+                    await SendFileWithSavebufferAsync(client, localFw01c, "fw00001c.bfw", "FW01C", ct);
 
-                    await _log.LogAsync("[TELDAT] BIOS: Reconnecting after SAVEBUFFER warning...");
-                    client.Connect();
-                    client.Execute("TYPE I");
-                    client.Execute("SITE CHECK RENAME OFF");
-                    await _log.LogAsync("[TELDAT] BIOS: Reconnected + prepared");
-                }
+                if (File.Exists(localFw01d))
+                    await SendFileWithSavebufferAsync(client, localFw01d, "fw00001d.bfw", "FW01D", ct);
 
-                await Task.Delay(4000, ct);
+                // ===== CIT =====
+                // para evitar 2 BINs e falta de espaço: sobrescreve o ativo
+                await SendFileWithSavebufferAsync(client, localCit, remoteCitName, "CIT", ct);
 
-                // ====== 3) Upload Firmware (.bfw) ======
-                // Tentativa #1: DIRECT OFF (normal)
-                // Se falhar no PUT (ligação fechada / etc), tenta #2 DIRECT ON
-                // Se falhar, tenta #3 mudando para PASV (às vezes redes fazem o inverso do esperado)
-                string remoteFw = "/" + Path.GetFileName(localFw);
+                // opcional
+                try { await ExecCmdLogAsync(client, "SITE COHERENCE", "COHERENCE", ct); } catch { }
 
-                bool fwOk = false;
-                Exception lastFwEx = null;
-
-                // attempt 1
-                ct.ThrowIfCancellationRequested();
-                await _log.LogAsync($"[TELDAT] Sending FW (attempt #1, PORT/ACTIVE, direct OFF): {Path.GetFileName(localFw)} -> {remoteFw}");
-                try
-                {
-                    client.Execute("SITE DIRECT OFF");
-                    client.UploadFile(localFw, remoteFw, FtpRemoteExists.Overwrite, false, FtpVerify.None);
-                    fwOk = true;
-                    await _log.LogAsync("[TELDAT] FW attempt #1 OK");
-                }
-                catch (Exception ex1)
-                {
-                    lastFwEx = ex1;
-                    await _log.LogAsync("[TELDAT] FW attempt #1 FAILED");
-                    await _log.LogAsync($"[TELDAT] EX1: {ex1}");
-                }
-
-                // attempt 2 (DIRECT ON)
-                if (!fwOk)
-                {
-                    ct.ThrowIfCancellationRequested();
-
-                    await _log.LogAsync("[TELDAT] Reconnecting before FW attempt #2...");
-                    try { if (client.IsConnected) client.Disconnect(); } catch { }
-                    client.Connect();
-                    client.Execute("TYPE I");
-                    client.Execute("SITE CHECK RENAME OFF");
-                    await _log.LogAsync("[TELDAT] Reconnected + prepared");
-
-                    await _log.LogAsync($"[TELDAT] Sending FW (attempt #2, PORT/ACTIVE, direct ON): {Path.GetFileName(localFw)} -> {remoteFw}");
-                    try
-                    {
-                        client.Execute("SITE DIRECT ON");
-                        await _log.LogAsync("[TELDAT] FW#2: OK SITE DIRECT ON");
-
-                        client.UploadFile(localFw, remoteFw, FtpRemoteExists.Overwrite, false, FtpVerify.None);
-                        fwOk = true;
-                        await _log.LogAsync("[TELDAT] FW attempt #2 OK");
-                    }
-                    catch (Exception ex2)
-                    {
-                        lastFwEx = ex2;
-                        await _log.LogAsync("[TELDAT] FW attempt #2 FAILED");
-                        await _log.LogAsync($"[TELDAT] EX2: {ex2}");
-                    }
-                    finally
-                    {
-                        // desligar DIRECT se possível
-                        try { client.Execute("SITE DIRECT OFF"); } catch { }
-                    }
-                }
-
-                // attempt 3 (mudar para PASV)
-                if (!fwOk)
-                {
-                    ct.ThrowIfCancellationRequested();
-
-                    await _log.LogAsync("[TELDAT] Reconnecting before FW attempt #3 (PASV)...");
-                    try { if (client.IsConnected) client.Disconnect(); } catch { }
-
-                    // muda o modo
-                    client.Config.DataConnectionType = FtpDataConnectionType.PASV;
-
-                    client.Connect();
-                    client.Execute("TYPE I");
-                    client.Execute("SITE CHECK RENAME OFF");
-                    await _log.LogAsync("[TELDAT] Reconnected + prepared (PASV)");
-
-                    await _log.LogAsync($"[TELDAT] Sending FW (attempt #3, PASV, direct ON): {Path.GetFileName(localFw)} -> {remoteFw}");
-                    try
-                    {
-                        client.Execute("SITE DIRECT ON");
-                        await _log.LogAsync("[TELDAT] FW#3: OK SITE DIRECT ON");
-
-                        client.UploadFile(localFw, remoteFw, FtpRemoteExists.Overwrite, false, FtpVerify.None);
-                        fwOk = true;
-                        await _log.LogAsync("[TELDAT] FW attempt #3 OK");
-                    }
-                    catch (Exception ex3)
-                    {
-                        lastFwEx = ex3;
-                        await _log.LogAsync("[TELDAT] FW attempt #3 FAILED");
-                        await _log.LogAsync($"[TELDAT] EX3: {ex3}");
-                    }
-                    finally
-                    {
-                        try { client.Execute("SITE DIRECT OFF"); } catch { }
-                    }
-                }
-
-                if (!fwOk)
-                {
-                    throw new Exception(
-                        "FW upload falhou (router fecha a ligação durante STOR). " +
-                        $"Último erro: {lastFwEx?.Message}", lastFwEx
-                    );
-                }
-
-                // ====== 4) SAVEBUFFER FW ======
-                ct.ThrowIfCancellationRequested();
-                try
-                {
-                    var rep = client.Execute("SITE SAVEBUFFER");
-                    await _log.LogAsync($"[TELDAT] FW: OK SITE SAVEBUFFER ({rep.Code}), waiting 6000ms");
-                }
-                catch (Exception ex)
-                {
-                    await _log.LogAsync($"[TELDAT] FW: WARN SAVEBUFFER exception -> {ex.Message}");
-                    try { if (client.IsConnected) client.Disconnect(); } catch { }
-
-                    await _log.LogAsync("[TELDAT] FW: Reconnecting after SAVEBUFFER warning...");
-                    client.Connect();
-                    client.Execute("TYPE I");
-                    client.Execute("SITE CHECK RENAME OFF");
-                    await _log.LogAsync("[TELDAT] FW: Reconnected + prepared");
-                }
-
-                await Task.Delay(6000, ct);
-
-                // ====== 5) Upload CIT (idealmente para o nome do CIT atual) ======
-                ct.ThrowIfCancellationRequested();
-                await _log.LogAsync($"[TELDAT] Sending CIT: {Path.GetFileName(localCit)} -> {remoteCitName}");
-
-                // Geralmente CIT é grande → DIRECT ON recomendado como fallback (manual)
-                bool citOk = false;
-                Exception lastCitEx = null;
-
-                // CIT attempt 1 (direct OFF)
-                try
-                {
-                    client.Execute("SITE DIRECT OFF");
-                    client.UploadFile(localCit, remoteCitName, FtpRemoteExists.Overwrite, false, FtpVerify.None);
-                    citOk = true;
-                    await _log.LogAsync("[TELDAT] CIT attempt #1 OK");
-                }
-                catch (Exception ex1)
-                {
-                    lastCitEx = ex1;
-                    await _log.LogAsync("[TELDAT] CIT attempt #1 FAILED");
-                    await _log.LogAsync($"[TELDAT] CIT EX1: {ex1}");
-                }
-
-                // CIT attempt 2 (direct ON)
-                if (!citOk)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    await _log.LogAsync("[TELDAT] Reconnecting before CIT attempt #2 (DIRECT ON)...");
-                    try { if (client.IsConnected) client.Disconnect(); } catch { }
-
-                    // volta ao modo mais “provável” (ACTIVE) para o CIT
-                    client.Config.DataConnectionType = FtpDataConnectionType.PORT;
-
-                    client.Connect();
-                    client.Execute("TYPE I");
-                    client.Execute("SITE CHECK RENAME OFF");
-                    await _log.LogAsync("[TELDAT] Reconnected + prepared (CIT)");
-
-                    try
-                    {
-                        client.Execute("SITE DIRECT ON");
-                        await _log.LogAsync("[TELDAT] CIT#2: OK SITE DIRECT ON");
-
-                        client.UploadFile(localCit, remoteCitName, FtpRemoteExists.Overwrite, false, FtpVerify.None);
-                        citOk = true;
-                        await _log.LogAsync("[TELDAT] CIT attempt #2 OK");
-                    }
-                    catch (Exception ex2)
-                    {
-                        lastCitEx = ex2;
-                        await _log.LogAsync("[TELDAT] CIT attempt #2 FAILED");
-                        await _log.LogAsync($"[TELDAT] CIT EX2: {ex2}");
-                    }
-                    finally
-                    {
-                        try { client.Execute("SITE DIRECT OFF"); } catch { }
-                    }
-                }
-
-                if (!citOk)
-                {
-                    throw new Exception($"CIT upload falhou. Último erro: {lastCitEx?.Message}", lastCitEx);
-                }
-
-                // ====== 6) SAVEBUFFER CIT ======
-                ct.ThrowIfCancellationRequested();
-                try
-                {
-                    var rep = client.Execute("SITE SAVEBUFFER");
-                    await _log.LogAsync($"[TELDAT] CIT: OK SITE SAVEBUFFER ({rep.Code}), waiting 8000ms");
-                }
-                catch (Exception ex)
-                {
-                    await _log.LogAsync($"[TELDAT] CIT: WARN SAVEBUFFER exception -> {ex.Message}");
-                    try { if (client.IsConnected) client.Disconnect(); } catch { }
-
-                    await _log.LogAsync("[TELDAT] CIT: Reconnecting after SAVEBUFFER warning...");
-                    client.Connect();
-                    client.Execute("TYPE I");
-                    client.Execute("SITE CHECK RENAME OFF");
-                    await _log.LogAsync("[TELDAT] CIT: Reconnected + prepared");
-                }
-
-                await Task.Delay(8000, ct);
-
-                // ====== 7) COHERENCE (opcional mas útil) ======
-                ct.ThrowIfCancellationRequested();
-                try
-                {
-                    var rep = client.Execute("SITE COHERENCE");
-                    await _log.LogAsync($"[TELDAT] SITE COHERENCE -> {rep.Code} {rep.Message}".Trim());
-                    if (!string.IsNullOrWhiteSpace(rep.InfoMessages))
-                        await _log.LogAsync($"[TELDAT] COHERENCE INFO:\n{rep.InfoMessages}".Trim());
-                }
-                catch (Exception ex)
-                {
-                    await _log.LogAsync($"[TELDAT] WARN: SITE COHERENCE falhou: {ex.Message}");
-                }
-
-                // ====== 8) RELOAD ======
-                ct.ThrowIfCancellationRequested();
-                client.Execute("SITE RELOAD ON");
-                await _log.LogAsync("[TELDAT] Comando restart enviado (SITE RELOAD ON). Tipicamente reinicia após ~30s ao sair do FTP.");
+                await ExecCmdLogAsync(client, "SITE RELOAD ON", "RELOAD", ct);
 
                 try { client.Disconnect(); } catch { }
                 await _log.LogAsync("[TELDAT] FTP Disconnect");
-                await _log.LogAsync("[TELDAT] Transferencia de ficheiros realizada com sucesso");
+                await _log.LogAsync("[TELDAT] Transferência concluída.");
             }
             catch (Exception ex)
             {
-                await _log.LogAsync($"[TELDAT] FTP Error (FULL): {ex}");
-                if (ex.InnerException != null)
-                    await _log.LogAsync($"[TELDAT] FTP InnerException: {ex.InnerException}");
-
+                await LogExceptionChainAsync("[TELDAT] FAIL", ex);
                 throw;
             }
         }
-    
 
+        private async Task SendFileWithSavebufferAsync(FtpClient client, string localPath, string remoteFileName, string tag, CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
 
+            // garante nome remoto LIMPO (sem paths)
+            remoteFileName = Path.GetFileName(remoteFileName);
+
+            // por defeito (procedimento normal)
+            try { await ExecCmdLogAsync(client, "SITE DIRECT OFF", $"{tag} DIRECT OFF", ct); } catch { }
+
+            await _log.LogAsync($"[TELDAT] A enviar {tag} -> {remoteFileName}");
+            try
+            {
+                await UploadNoResumeAsync(client, localPath, remoteFileName, ct);
+                await _log.LogAsync($"[TELDAT] {tag}: PUT OK -> {remoteFileName}");
+            }
+            catch (Exception ex)
+            {
+                await _log.LogAsync($"[TELDAT] {tag}: PUT FAIL -> {remoteFileName}");
+                await LogExceptionChainAsync($"[TELDAT] {tag} UPLOAD", ex);
+
+                // 1 retry simples com DIRECT ON (manual)
+                await _log.LogAsync($"[TELDAT] {tag}: retry 1x com SITE DIRECT ON...");
+                await ExecCmdLogAsync(client, "SITE DIRECT ON", $"{tag} DIRECT ON", ct);
+
+                try
+                {
+                    await UploadNoResumeAsync(client, localPath, remoteFileName, ct);
+                    await _log.LogAsync($"[TELDAT] {tag}: PUT OK (DIRECT ON) -> {remoteFileName}");
+                }
+                catch (Exception ex2)
+                {
+                    await _log.LogAsync($"[TELDAT] {tag}: PUT FAIL (DIRECT ON) -> {remoteFileName}");
+                    await LogExceptionChainAsync($"[TELDAT] {tag} UPLOAD DIRECTON", ex2);
+                    throw;
+                }
+                finally
+                {
+                    try { await ExecCmdLogAsync(client, "SITE DIRECT OFF", $"{tag} DIRECT OFF", ct); } catch { }
+                }
+            }
+
+            await _log.LogAsync($"[TELDAT] {tag}: a executar SITE SAVEBUFFER...");
+            await ExecCmdLogAsync(client, "SITE SAVEBUFFER", $"{tag} SAVEBUFFER", ct);
+
+            // sem loops / sem STATBUFFER
+            await Task.Delay(4000, ct);
+        }
+
+        private async Task UploadNoResumeAsync(FtpClient client, string localPath, string remoteFileName, CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            // Abrir stream local
+            using var fs = new FileStream(localPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+            // Abrir stream remoto (STOR) - sem “resume”
+            using var rs = client.OpenWrite(remoteFileName, FtpDataType.Binary);
+
+            // Copy com cancelamento
+            byte[] buf = new byte[128 * 1024];
+            int read;
+            while ((read = await fs.ReadAsync(buf, 0, buf.Length, ct)) > 0)
+            {
+                ct.ThrowIfCancellationRequested();
+                rs.Write(buf, 0, read); // FluentFTP stream é sync
+            }
+
+            rs.Flush();
+        }
+
+        private async Task<FtpReply> ExecCmdLogAsync(FtpClient client, string cmd, string tag, CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+            var rep = client.Execute(cmd);
+
+            string msg = $"{tag}: ({rep.Code}) {rep.Message}".Trim();
+            if (!string.IsNullOrWhiteSpace(rep.InfoMessages))
+                msg += "\n" + rep.InfoMessages.TrimEnd();
+
+            await _log.LogAsync("[TELDAT] " + msg);
+            return rep;
+        }
+
+        private async Task LogExceptionChainAsync(string prefix, Exception ex)
+        {
+            if (ex == null) return;
+
+            await _log.LogAsync($"{prefix}: {ex.GetType().Name}: {ex.Message}");
+
+            if (ex is AggregateException aex)
+            {
+                var flat = aex.Flatten();
+                int i = 0;
+                foreach (var inner in flat.InnerExceptions)
+                {
+                    i++;
+                    await _log.LogAsync($"{prefix}: INNER_AGG[{i}] {inner.GetType().Name}: {inner.Message}");
+                }
+            }
+
+            int depth = 0;
+            var cur = ex.InnerException;
+            while (cur != null && depth < 8)
+            {
+                depth++;
+                await _log.LogAsync($"{prefix}: INNER[{depth}] {cur.GetType().Name}: {cur.Message}");
+                cur = cur.InnerException;
+            }
+
+            await _log.LogAsync($"{prefix}: STACK: {ex.StackTrace}");
+        }
 
 
         private async Task VirtualAccess(CancellationToken ct)

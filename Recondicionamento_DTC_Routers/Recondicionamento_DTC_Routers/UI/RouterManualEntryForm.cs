@@ -24,10 +24,12 @@ namespace Recondicionamento_DTC_Routers.UI
         {
             Text = "Adicionar Router manual ao report";
             StartPosition = FormStartPosition.CenterParent;
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false;
-            MinimizeBox = false;
+            this.FormBorderStyle = FormBorderStyle.Sizable;
+            this.MaximizeBox = true;
+            this.MinimumSize = new Size(900, 550);
             ClientSize = new Size(820, 520);
+
+
 
             BuildUi();
             Wire();
@@ -50,11 +52,13 @@ namespace Recondicionamento_DTC_Routers.UI
                 ColumnCount = 2,
                 RowCount = 3
             };
-            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55));
-            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            root.ColumnStyles.Clear();
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55)); // esquerda
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45)); // direita
+
+            root .RowStyles.Clear();
+            root .RowStyles.Add(new RowStyle(SizeType.Percent, 70)); // zona de cima
+            root .RowStyles.Add(new RowStyle(SizeType.Percent, 30)); // comentário
             Controls.Add(root);
 
             // --- Top: dados base ---
