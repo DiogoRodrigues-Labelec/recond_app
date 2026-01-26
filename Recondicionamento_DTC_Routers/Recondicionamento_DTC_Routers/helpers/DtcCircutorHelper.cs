@@ -16,6 +16,9 @@ namespace Recondicionamento_DTC_Routers.helpers
     {
         private readonly ILogSink _log;
 
+        // ✅ mínimo para poderes ir buscar FW após upgrade no runner
+        public (string Id, string Firmware)? LastSnapshotAfterUpgrade { get; private set; }
+
         public CircutorDtcHelper(ILogSink log) => _log = log;
 
         public async Task<(string Id, string Firmware)> GetSnapshotAsync(string ip, int port, CancellationToken ct)
@@ -32,19 +35,21 @@ namespace Recondicionamento_DTC_Routers.helpers
 
             EnsureLoggedIn(driver, wait, user: "admin", pass: "admin");
 
-            // Main page has Identifier / Version somewhere (as per your print)
             wait.Until(d => d.PageSource.Length > 1500);
 
             string src = driver.PageSource ?? "";
             string bodyText = SafeText(driver);
 
-            string id = FirstMatch(bodyText, @"Identifier:\s*([A-Za-z0-9_]+)");
+            // ✅ ID mais “safe” (normalmente CIR + dígitos)
+            string id = FirstMatch(bodyText, @"\bIdentifier:\s*(CIR[0-9]+)\b");
             if (string.IsNullOrWhiteSpace(id))
-                id = FirstMatch(src, @"Identifier:\s*([A-Za-z0-9_]+)");
+                id = FirstMatch(src, @"\bIdentifier:\s*(CIR[0-9]+)\b");
 
-            string ver = FirstMatch(bodyText, @"Version:\s*([0-9]+\.[0-9]+\.[0-9A-Za-z]+)");
+            // ✅ FW: apanhar "Version: 1.0.25s" e ignorar "PRIME version: 2228"
+            // (Regex antigo falhava para 1.0.25s e podia confundir com PRIME)
+            string ver = FirstMatch(bodyText, @"\bVersion:\s*([0-9]+(?:\.[0-9]+){1,3}[A-Za-z0-9]*)\b");
             if (string.IsNullOrWhiteSpace(ver))
-                ver = FirstMatch(src, @"Version:\s*([0-9]+\.[0-9]+\.[0-9A-Za-z]+)");
+                ver = FirstMatch(src, @"\bVersion:\s*([0-9]+(?:\.[0-9]+){1,3}[A-Za-z0-9]*)\b");
 
             id = (id ?? "").Trim();
             ver = (ver ?? "").Trim();
@@ -75,10 +80,8 @@ namespace Recondicionamento_DTC_Routers.helpers
 
             EnsureLoggedIn(driver, wait, user: "admin", pass: "admin");
 
-            // Click the left menu button "Update" (your UI: input type=button value=Update)
             ClickUpdateMenu(driver, wait);
 
-            // Wait until update page shows file input
             var fileInput = wait.Until(d => TryFind(d, By.CssSelector("input[type='file']")));
             if (fileInput == null)
                 throw new Exception("[CIRCUTOR] Update page: não encontrei input[type=file].");
@@ -86,7 +89,6 @@ namespace Recondicionamento_DTC_Routers.helpers
             fileInput.SendKeys(tarPath);
             await _log.LogAsync("[CIRCUTOR] TAR colocado no input[type=file].");
 
-            // Click Send
             var sendBtn =
                 TryFind(driver, By.CssSelector("input[type='submit'][value='Send']")) ??
                 TryFind(driver, By.XPath("//input[@type='submit' and contains(@value,'Send')]")) ??
@@ -99,21 +101,28 @@ namespace Recondicionamento_DTC_Routers.helpers
             WaitClickable(wait, sendBtn);
             SafeClick(driver, sendBtn);
 
-            await _log.LogAsync("[CIRCUTOR] Send clicado. A aguardar reboot/HTTP up...");
-
-            // depois de sendBtn.Click();
             await _log.LogAsync("[CIRCUTOR] Send feito. Aguardar ~90s para o update aplicar...");
 
-            await Task.Delay(TimeSpan.FromSeconds(30), ct);
+            // ✅ 90s (tu disseste que é o necessário)
+            await Task.Delay(TimeSpan.FromSeconds(90), ct);
 
-            // só depois esperar o reboot / serviço voltar
+            // ✅ Só 1 wait (o teu estava a fazer 600 + waitRebootSeconds)
             await _log.LogAsync("[CIRCUTOR] A aguardar voltar a responder por HTTP...");
-            await WaitHttpUpAsync(baseUrl, timeoutSeconds: 600, ct);
-
-            // device reboots: wait HTTP up
-            await WaitHttpUpAsync(baseUrl, waitRebootSeconds, ct);
+            await WaitHttpUpAsync(baseUrl, timeoutSeconds: waitRebootSeconds, ct);
 
             await _log.LogAsync("[CIRCUTOR] HTTP voltou a responder após upgrade.");
+
+            // ✅ mínimo: ler FW final e guardar para o runner
+            try
+            {
+                var snap = await GetSnapshotAsync(ip, port, ct);
+                LastSnapshotAfterUpgrade = snap;
+                await _log.LogAsync($"[CIRCUTOR] Pós-upgrade -> ID='{snap.Id}' FW='{snap.Firmware}'");
+            }
+            catch (Exception ex)
+            {
+                await _log.LogAsync($"[CIRCUTOR] Pós-upgrade snapshot falhou: {ex.Message}");
+            }
         }
 
         // ------------------------- internal -------------------------
@@ -127,7 +136,6 @@ namespace Recondicionamento_DTC_Routers.helpers
             options.AddArgument("--ignore-certificate-errors");
             options.AddArgument("--disable-gpu");
             options.AddArgument("--no-sandbox");
-            // options.AddArgument("--headless=new"); // se quiseres headless, mas tu queres ver a janela
 
             return new ChromeDriver(service, options);
         }
@@ -137,11 +145,9 @@ namespace Recondicionamento_DTC_Routers.helpers
 
         private void EnsureLoggedIn(IWebDriver driver, WebDriverWait wait, string user, string pass)
         {
-            // If password box exists -> login page
             var passBox = TryFind(driver, By.CssSelector("input[type='password']"));
             if (passBox == null)
             {
-                // already logged in
                 WaitMainLoaded(driver, wait);
                 return;
             }
@@ -184,21 +190,17 @@ namespace Recondicionamento_DTC_Routers.helpers
                 passBox.SendKeys(OpenQA.Selenium.Keys.Enter);
             }
 
-            // IMPORTANT: don’t “return too fast”
             WaitMainLoaded(driver, wait);
         }
 
         private static void WaitMainLoaded(IWebDriver driver, WebDriverWait wait)
         {
-            // Wait until the main “Update” menu button exists
             wait.Until(d =>
             {
                 try
                 {
                     var updateBtn = TryFind(d, By.XPath("//input[@type='button' and normalize-space(@value)='Update']"));
                     if (updateBtn != null) return true;
-
-                    // fallback: page grew
                     return d.PageSource != null && d.PageSource.Length > 2000;
                 }
                 catch { return false; }
@@ -207,7 +209,6 @@ namespace Recondicionamento_DTC_Routers.helpers
 
         private void ClickUpdateMenu(IWebDriver driver, WebDriverWait wait)
         {
-            // Your UI: <input type="button" class="BMA" value="Update" onclick="Request('Update')">
             var updateBtn =
                 TryFind(driver, By.XPath("//input[@type='button' and normalize-space(@value)='Update']")) ??
                 TryFind(driver, By.CssSelector("input[type='button'][value='Update']")) ??
@@ -219,7 +220,6 @@ namespace Recondicionamento_DTC_Routers.helpers
             WaitClickable(wait, updateBtn);
             SafeClick(driver, updateBtn);
 
-            // Wait update page: file input appears OR text hints
             wait.Until(d =>
             {
                 try
@@ -250,21 +250,11 @@ namespace Recondicionamento_DTC_Routers.helpers
 
         private static void SafeClick(IWebDriver driver, IWebElement el)
         {
-            try
-            {
-                el.Click();
-            }
+            try { el.Click(); }
             catch
             {
-                try
-                {
-                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", el);
-                }
-                catch
-                {
-                    // last resort: focus + enter
-                    el.SendKeys(OpenQA.Selenium.Keys.Enter);
-                }
+                try { ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", el); }
+                catch { el.SendKeys(OpenQA.Selenium.Keys.Enter); }
             }
         }
 
@@ -288,7 +278,6 @@ namespace Recondicionamento_DTC_Routers.helpers
         {
             var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
 
-            // give it a moment to actually reboot
             await Task.Delay(5000, ct);
 
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };

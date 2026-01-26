@@ -29,7 +29,7 @@ namespace Recondicionamento_DTC_Routers
            public static string _dtcPort = @"80";
            public static string _dtcUser = @"admin";
            public static string _dtcPass = @"passwd02";
-           public static string _ns_emi = @"1234567890";
+           public static string _ns_emi = @"KFM2200000026";
            public static string _portRS232 = @"1232";
            public static string _portRS485 = @"1485";
 
@@ -128,6 +128,22 @@ namespace Recondicionamento_DTC_Routers
             var fallback = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "resultados");
             Directory.CreateDirectory(fallback);
             return fallback;
+        }
+
+        public static string TryGetEmiIdDc()
+        {
+            try
+            {
+                var cv = Configuration.configurationValues;
+                if (cv == null) return "";
+
+                var p = cv.ns_emi;
+                return p;
+            }
+            catch
+            {
+                return "";
+            }
         }
 
 
