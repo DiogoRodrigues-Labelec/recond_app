@@ -378,29 +378,36 @@ namespace Recondicionamento_DTC_Routers.Workflow
 
             string id = Regex.Replace(dtcId.Trim(), @"\s+", "");
             string fab = (fabricante ?? "").ToUpperInvariant();
-
-            // Só aplica a regra especial no CIRCUTOR
-            if (!fab.Contains("CIRCUTOR"))
-                return id;
-
-            // Já está no formato do supervisor (CIRS...) -> não mexe
             string up = id.ToUpperInvariant();
-            if (up.StartsWith("CIRS"))
+
+            // já está em formato supervisor -> não mexe
+            if (up.StartsWith("CIRS") || up.StartsWith("ZIVS"))
                 return up;
 
-            // Se vier como CIR + dígitos (ex: CIR2200001797) -> CIRS + remove 1º dígito dos números
-            if (up.StartsWith("CIR"))
+            // decide prefixo supervisor e prefixo normal
+            string pfx = fab.Contains("CIRCUTOR") ? "CIR" :
+                         fab.Contains("ZIV") ? "ZIV" : "";
+
+            string spfx = fab.Contains("CIRCUTOR") ? "CIRS" :
+                          fab.Contains("ZIV") ? "ZIVS" : "";
+
+            if (string.IsNullOrWhiteSpace(pfx) || string.IsNullOrWhiteSpace(spfx))
+                return id; // desconhecido -> não inventa
+
+            // caso "CIR2200..." / "ZIV2200..."
+            if (up.StartsWith(pfx))
             {
-                string digits = up.Substring(3);           // "2200001797"
-                if (digits.Length > 0) digits = digits.Substring(1); // remove o primeiro "2" -> "200001797"
-                return "CIRS" + digits;
+                string digits = up.Substring(pfx.Length);          // parte após CIR/ZIV
+                if (digits.Length > 0) digits = digits.Substring(1); // remove 1º dígito
+                return spfx + digits;
             }
 
-            // Se vier só dígitos -> CIRS + remove 1º dígito
+            // caso só dígitos (ou mistura) -> extrai dígitos e aplica regra
             string onlyDigits = Regex.Replace(up, @"\D+", "");
             if (onlyDigits.Length > 0) onlyDigits = onlyDigits.Substring(1);
-            return "CIRS" + onlyDigits;
+            return spfx + onlyDigits;
         }
+
     }
 
     public sealed class DtcDeviceSnapshot
