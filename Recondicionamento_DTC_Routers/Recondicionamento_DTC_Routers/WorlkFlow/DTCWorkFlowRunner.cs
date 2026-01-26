@@ -30,16 +30,15 @@ namespace Recondicionamento_DTC_Routers.Workflow
         public Func<Task> AskSwapDtcAsync { get; set; }                        // obrigatório
         public Func<CancellationToken, Task<string>> DetectFabricanteAsync { get; set; } // obrigatório
 
-        // ✅ NOVO (opcional): Snapshot único (ID + FW) numa só sessão Selenium
+        // Snapshot único (ID + FW) numa só sessão Selenium
         public Func<string, CancellationToken, Task<DtcDeviceSnapshot>> GetDeviceSnapshotAsync { get; set; }
 
-        // ✅ COMPAT com o teu Form atual:
-        // O teu Form já faz cache internamente, por isso chamar os 2 não cria 2 sessões Selenium.
-        public Func<string, CancellationToken, Task<string>> GetDtcIdAsync { get; set; }      // opcional (fallback)
-        public Func<string, CancellationToken, Task<string>> GetFirmwareAsync { get; set; }   // opcional (fallback)
+        // Fallbacks (se não houver snapshot)
+        public Func<string, CancellationToken, Task<string>> GetDtcIdAsync { get; set; }      // opcional
+        public Func<string, CancellationToken, Task<string>> GetFirmwareAsync { get; set; }   // opcional
 
         public Func<string, string> GetExpectedFirmware { get; set; } // pode devolver "" (sem mapping)
-        public Func<string, CancellationToken, Task> DoUpgradeFirmwareAsync { get; set; } // opcional (manual)
+        public Func<string, CancellationToken, Task> DoUpgradeFirmwareAsync { get; set; } // opcional (manual/auto)
 
         public Func<string, string, CancellationToken, Task> DoUploadConfigAsync { get; set; } // opcional
         public Func<string, string, CancellationToken, Task<bool>> TestAnalogInputsAsync { get; set; } // opcional
@@ -62,7 +61,7 @@ namespace Recondicionamento_DTC_Routers.Workflow
 
             await _log.LogAsync("=== INÍCIO WORKFLOW DTC ===");
 
-            // Step 0 (opcional) — se não existir na grid, RunStepAsync ignora
+            // Step 0 (opcional) — se não existir na grid, ignora
             if (VerifyTestSetupAsync != null)
             {
                 await RunStepAsync(0, "Validar setup", ct, async () =>
@@ -92,11 +91,10 @@ namespace Recondicionamento_DTC_Routers.Workflow
                 await _log.LogAsync($"Fabricante: {r.Fabricante}");
             });
 
-            // 3) Ler ID/Serial (web) + (se existir) FW no snapshot
+            // 3) Ler ID/Serial (+ FW se vier no snapshot)
             DtcDeviceSnapshot snap = null;
             await RunStepAsync(3, "Ler ID/Serial DTC (web)", ct, async () =>
             {
-                // Preferência: snapshot (ID+FW)
                 if (GetDeviceSnapshotAsync != null)
                 {
                     snap = await GetDeviceSnapshotAsync(r.Fabricante, ct);
@@ -105,7 +103,6 @@ namespace Recondicionamento_DTC_Routers.Workflow
                 }
                 else
                 {
-                    // Fallback: API antiga do Form (ID separado)
                     if (GetDtcIdAsync == null)
                         throw new InvalidOperationException("Nem GetDeviceSnapshotAsync nem GetDtcIdAsync estão definidos.");
 
@@ -116,10 +113,9 @@ namespace Recondicionamento_DTC_Routers.Workflow
                 await _log.LogAsync($"ID/Serial: {r.NumeroSerie}");
             });
 
-            // 4) Ler FW atual
+            // 4) Ler FW atual (se não veio no snapshot)
             await RunStepAsync(4, "Ler FW atual", ct, async () =>
             {
-                // Se veio no snapshot do step 3, ótimo
                 if (string.IsNullOrWhiteSpace(r.FirmwareOld))
                 {
                     if (GetFirmwareAsync == null)
@@ -131,13 +127,9 @@ namespace Recondicionamento_DTC_Routers.Workflow
                 SetDetail(4, string.IsNullOrWhiteSpace(r.FirmwareOld) ? "vazio" : r.FirmwareOld);
                 await _log.LogAsync($"FW old: {r.FirmwareOld}");
             },
-            onSkip: () =>
-            {
-                // se não conseguimos ler FW, mantém vazio e deixa conformidade depender do mapping
-                r.FirmwareOld ??= "";
-            });
+            onSkip: () => { r.FirmwareOld ??= ""; });
 
-            // 5) Upgrade FW (se necessário) — AGORA pergunta ao utilizador
+            // 5) Upgrade FW (se necessário) — pergunta ao utilizador
             await RunStepAsync(5, "Upgrade FW (se necessário)", ct, async () =>
             {
                 string expected = (GetExpectedFirmware?.Invoke(r.Fabricante) ?? "").Trim();
@@ -153,15 +145,13 @@ namespace Recondicionamento_DTC_Routers.Workflow
                     throw new StepSkippedException("FW já é o esperado.");
                 }
 
-                // ✅ Pergunta se quer fazer upgrade
                 if (AskYesNo == null)
                     throw new InvalidOperationException("AskYesNo não definido (necessário para confirmar upgrade).");
 
                 bool doIt = AskYesNo(
                     "Upgrade de Firmware",
-                    $"FW atual: {r.FirmwareOld}\nFW esperado: {expected}\n\nQueres realizar o upgrade agora (manual)?",
+                    $"FW atual: {r.FirmwareOld}\nFW esperado: {expected}\n\nQueres realizar o upgrade agora?",
                     true);
-
 
                 if (!doIt)
                     throw new StepSkippedException("Utilizador optou por não fazer upgrade.");
@@ -169,10 +159,9 @@ namespace Recondicionamento_DTC_Routers.Workflow
                 if (DoUpgradeFirmwareAsync == null)
                     throw new InvalidOperationException($"Precisa upgrade para {expected} mas DoUpgradeFirmwareAsync é null.");
 
-                // ✅ Executa upgrade manual (o teu método já espera reboot)
                 await DoUpgradeFirmwareAsync(r.Fabricante, ct);
 
-                // ✅ Depois do upgrade: lê firmware novamente
+                // Depois do upgrade: lê firmware novamente
                 string fwAfter = "";
 
                 if (GetDeviceSnapshotAsync != null)
@@ -304,7 +293,6 @@ namespace Recondicionamento_DTC_Routers.Workflow
                 step.Status = StepStatus.Skipped;
                 step.Detail = ex.Message;
                 await _log.LogAsync($"[{order:00}] {name} - SKIP: {ex.Message}");
-                // não faz throw -> continua workflow
             }
             catch (Exception ex)
             {
@@ -312,7 +300,6 @@ namespace Recondicionamento_DTC_Routers.Workflow
                 step.Status = StepStatus.Fail;
                 step.Detail = ex.Message;
                 await _log.LogAsync($"[{order:00}] {name} - FAIL: {ex.Message}");
-                // não faz throw -> continua workflow
             }
         }
 
@@ -328,14 +315,12 @@ namespace Recondicionamento_DTC_Routers.Workflow
             }
         }
 
-        // Exceção pública para poderes usar no Form (upgrade manual -> SKIP)
         public sealed class StepSkippedException : Exception
         {
             public StepSkippedException(string msg) : base(msg) { }
         }
     }
 
-    // Snapshot simples (ID + FW)
     public sealed class DtcDeviceSnapshot
     {
         public string Id { get; set; }
