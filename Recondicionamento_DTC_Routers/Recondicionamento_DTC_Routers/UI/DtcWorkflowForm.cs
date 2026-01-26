@@ -1008,10 +1008,10 @@ namespace Recondicionamento_DTC_Routers.UI
         }
 
         private async Task<(bool okHttp, string xml)> RunWsDcRequestAsync(
-            string idRpt,
-            string idDcRaw,
-            CancellationToken ct,
-            string idMetersOverride = null)
+    string idRpt,
+    string idDcRaw,
+    CancellationToken ct,
+    string idMetersOverride = null)
         {
             var url = $"http://{Configuration.configurationValues.ip}:8080/WS_DC/WS_DC.asmx";
 
@@ -1021,7 +1021,8 @@ namespace Recondicionamento_DTC_Routers.UI
 
             string idDc = NormalizeIdDc(idDcRaw);
 
-            var soap = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+            // SOAP (string original)
+            string soap = $@"<?xml version=""1.0"" encoding=""utf-8""?>
 <s:Envelope xmlns:s=""http://schemas.xmlsoap.org/soap/envelope/"">
   <s:Header/>
   <s:Body>
@@ -1037,6 +1038,54 @@ namespace Recondicionamento_DTC_Routers.UI
   </s:Body>
 </s:Envelope>";
 
+            // ----- log "bonito" -----
+            static string Trunc(string s, int max)
+            {
+                if (string.IsNullOrEmpty(s)) return "";
+                s = s.Replace("\r\n", "\n");
+                return s.Length <= max ? s : s.Substring(0, max) + "\n...\n(TRUNCADO)";
+            }
+
+            static string PrettyXml(string xml)
+            {
+                if (string.IsNullOrWhiteSpace(xml)) return "";
+                try
+                {
+                    var doc = new System.Xml.XmlDocument();
+                    doc.LoadXml(xml);
+
+                    var sb = new StringBuilder();
+                    using (var xw = System.Xml.XmlWriter.Create(sb, new System.Xml.XmlWriterSettings
+                    {
+                        Indent = true,
+                        IndentChars = "  ",
+                        NewLineChars = "\n",
+                        NewLineHandling = System.Xml.NewLineHandling.Replace,
+                        OmitXmlDeclaration = false
+                    }))
+                    {
+                        doc.Save(xw);
+                    }
+                    return sb.ToString();
+                }
+                catch
+                {
+                    // se não for XML válido (ou vier HTML), devolve como está
+                    return xml;
+                }
+            }
+
+            // log do request (no ficheiro) + resumo no UI
+            string soapPretty = PrettyXml(soap);
+            await _logger.LogAsync(
+                $"[WS_DC][REQ]\n" +
+                $"Url      : {url}\n" +
+                $"IdRpt    : {idRpt}\n" +
+                $"IdMeters : {idMeters}\n" +
+                $"IdDC     : {idDc}\n" +
+                $"SOAP:\n{Trunc(soapPretty, 4000)}\n",
+                toFile: true);
+
             using var http = new HttpClient();
             using var content = new StringContent(soap, Encoding.UTF8, "text/xml");
             using var req = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
@@ -1045,7 +1094,22 @@ namespace Recondicionamento_DTC_Routers.UI
             using var resp = await http.SendAsync(req, ct);
             var raw = await resp.Content.ReadAsStringAsync(ct);
 
-            await _logger.LogAsync($"WS_DC idRpt={idRpt} idMeters={idMeters} idDc={idDc} status={(int)resp.StatusCode}", toFile: true);
+            // response bonito
+            string rawPretty = PrettyXml(raw);
+
+            await _logger.LogAsync(
+                $"[WS_DC][RESP]\n" +
+                $"HTTP     : {(int)resp.StatusCode} {resp.ReasonPhrase}\n" +
+                $"Success  : {resp.IsSuccessStatusCode}\n" +
+                $"Headers  :\n{Trunc(resp.Headers.ToString() + resp.Content.Headers.ToString(), 2000)}\n" +
+                $"Body:\n{Trunc(rawPretty, 6000)}\n",
+                toFile: true);
+
+            // (opcional) também podes mandar um resumo curtinho para a UI (sem spam)
+            await _logger.LogAsync(
+                $"WS_DC {idRpt} | HTTP {(int)resp.StatusCode} | IdMeters={idMeters} | IdDC={idDc}",
+                toFile: false);
+
             return (resp.IsSuccessStatusCode, raw);
         }
 
