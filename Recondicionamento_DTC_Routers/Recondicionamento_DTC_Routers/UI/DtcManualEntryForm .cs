@@ -10,7 +10,7 @@ namespace Recondicionamento_DTC_Routers.UI
         public DtcRecord Result { get; private set; }
 
         private TextBox _txtFab, _txtId, _txtFwOld, _txtFwNew, _txtComment;
-        private CheckBox _chkConfig, _chkS01Dtc, _chkS01Emi, _chkConforme;
+        private CheckBox _chkConfig, _chks21Dtc, _chks21Emi, _chkConforme;
         private Label _lblExpected;
 
         private Button _btnOk, _btnCancel;
@@ -92,14 +92,14 @@ namespace Recondicionamento_DTC_Routers.UI
             };
 
             _chkConfig = new CheckBox { Text = "Config carregada (E-REDES)", AutoSize = true, Checked = true };
-            _chkS01Dtc = new CheckBox { Text = "S01 DTC (Tensões/Correntes) OK", AutoSize = true, Checked = true };
-            _chkS01Emi = new CheckBox { Text = "S01 EMI PLC OK", AutoSize = true, Checked = true };
+            _chks21Dtc = new CheckBox { Text = "s21 DTC (Tensões/Correntes) OK", AutoSize = true, Checked = true };
+            _chks21Emi = new CheckBox { Text = "s21 EMI PLC OK", AutoSize = true, Checked = true };
 
             _chkConforme = new CheckBox { Text = "Conformidade final (auto)", AutoSize = true, Enabled = false };
 
             flow.Controls.Add(_chkConfig);
-            flow.Controls.Add(_chkS01Dtc);
-            flow.Controls.Add(_chkS01Emi);
+            flow.Controls.Add(_chks21Dtc);
+            flow.Controls.Add(_chks21Emi);
             flow.Controls.Add(new Label { Height = 8 });
             flow.Controls.Add(_chkConforme);
 
@@ -130,7 +130,7 @@ namespace Recondicionamento_DTC_Routers.UI
 @"Checklist manual (resumo):
 1) Identificar fabricante / ID
 2) Confirmar FW old/new
-3) Assinalar config + S01 DTC + S01 EMI
+3) Assinalar config + s21 DTC + s21 EMI
 4) Adicionar comentário"
             };
             gbNotes.Controls.Add(lbl);
@@ -177,8 +177,8 @@ namespace Recondicionamento_DTC_Routers.UI
             _txtFwNew.TextChanged += (_, __) => RecalcConformidade();
 
             _chkConfig.CheckedChanged += (_, __) => RecalcConformidade();
-            _chkS01Dtc.CheckedChanged += (_, __) => RecalcConformidade();
-            _chkS01Emi.CheckedChanged += (_, __) => RecalcConformidade();
+            _chks21Dtc.CheckedChanged += (_, __) => RecalcConformidade();
+            _chks21Emi.CheckedChanged += (_, __) => RecalcConformidade();
 
             UpdateExpectedFwBox();
         }
@@ -215,7 +215,7 @@ namespace Recondicionamento_DTC_Routers.UI
             if (!string.IsNullOrWhiteSpace(expected))
                 fwOk = string.Equals(fwNew, expected, StringComparison.OrdinalIgnoreCase);
 
-            bool conforme = _chkConfig.Checked && _chkS01Dtc.Checked && _chkS01Emi.Checked && fwOk;
+            bool conforme = _chkConfig.Checked && _chks21Dtc.Checked && _chks21Emi.Checked && fwOk;
             _chkConforme.Checked = conforme;
         }
 
@@ -234,8 +234,8 @@ namespace Recondicionamento_DTC_Routers.UI
                 FirmwareNew = fwNew,
 
                 ConfigUploaded = _chkConfig.Checked,
-                AnalogOk = _chkS01Dtc.Checked,
-                EmiPlcOk = _chkS01Emi.Checked,
+                AnalogOk = _chks21Dtc.Checked,
+                EmiPlcOk = _chks21Emi.Checked,
 
                 Comentario = _txtComment.Text ?? "",
                 ConformidadeFinal = _chkConforme.Checked

@@ -47,8 +47,8 @@ namespace Recondicionamento_DTC_Routers.helpers
             html.AppendLine("<th>FW Old</th>");
             html.AppendLine("<th>FW New</th>");
             html.AppendLine("<th>Config</th>");
-            html.AppendLine("<th>S01 DTC</th>");
-            html.AppendLine("<th>S01 EMI</th>");
+            html.AppendLine("<th>s21 DTC</th>");
+            html.AppendLine("<th>s21 EMI</th>");
             html.AppendLine("<th>Conformidade</th>");
             html.AppendLine("<th>Comentário</th>");
             html.AppendLine("</tr></thead>");

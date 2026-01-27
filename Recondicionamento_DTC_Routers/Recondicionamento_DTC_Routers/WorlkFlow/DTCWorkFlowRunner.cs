@@ -129,7 +129,7 @@ namespace Recondicionamento_DTC_Routers.Workflow
                 }
 
                 // 🔧 TESTE: descomenta para forçar upgrade mesmo quando já está igual ao esperado
-                // r.FirmwareOld = "0.0.0-test";
+                 r.FirmwareOld = "0.0.0-test";
 
                 SetDetail(4, string.IsNullOrWhiteSpace(r.FirmwareOld) ? "vazio" : r.FirmwareOld);
                 await _log.LogAsync($"FW old: {r.FirmwareOld}");
@@ -238,28 +238,28 @@ namespace Recondicionamento_DTC_Routers.Workflow
             onSkip: () => r.ConfigUploaded = true,
             onFail: () => r.ConfigUploaded = false);
 
-            // 8) S01 DTC  -> IdDC = ID do DTC (ajustado p/ SVM no CIRCUTOR)
-            await RunStepAsync(8, "S01 DTC: Tensões/Correntes (WS)", ct, async () =>
+            // 8) s21 DTC  -> IdDC = ID do DTC (ajustado p/ SVM no CIRCUTOR)
+            await RunStepAsync(8, "s21 DTC: Tensões/Correntes (WS)", ct, async () =>
             {
                 if (TestAnalogInputsAsync == null)
                     throw new StepSkippedException("TestAnalogInputsAsync não definido (SKIP).");
 
-                string idDcDtc = FixDtcIdForS01(r.Fabricante, r.NumeroSerie);
+                string idDcDtc = FixDtcIdFors21(r.Fabricante, r.NumeroSerie);
 
                 bool ok = await TestAnalogInputsAsync(r.Fabricante, idDcDtc, ct);
                 r.AnalogOk = ok;
 
                 SetDetail(8, ok ? "OK" : "FAIL");
-                await _log.LogAsync($"S01(DTC) idDc={idDcDtc} (raw={r.NumeroSerie}) -> {ok}");
+                await _log.LogAsync($"s21(DTC) idDc={idDcDtc} (raw={r.NumeroSerie}) -> {ok}");
 
-                if (!ok) throw new Exception("S01(DTC) FAIL");
+                if (!ok) throw new Exception("s21(DTC) FAIL");
             },
             onSkip: () => r.AnalogOk = true,
             onFail: () => r.AnalogOk = false);
 
 
-            // 9) S01 EMI PLC -> IdDC = emiPlcIdDc (ID do meter vindo do config)
-            await RunStepAsync(9, "S01 EMI PLC: Instantâneos (WS)", ct, async () =>
+            // 9) s21 EMI PLC -> IdDC = emiPlcIdDc (ID do meter vindo do config)
+            await RunStepAsync(9, "s21 EMI PLC: Instantâneos (WS)", ct, async () =>
             {
                 if (TestEmiPlcAsync == null)
                     throw new StepSkippedException("TestEmiPlcAsync não definido (SKIP).");
@@ -272,13 +272,24 @@ namespace Recondicionamento_DTC_Routers.Workflow
                 r.EmiPlcOk = ok;
 
                 SetDetail(9, ok ? "OK" : "FAIL");
-                await _log.LogAsync($"S01(EMI) idDc={emiIdDc} -> {ok}");
+                await _log.LogAsync($"s21(EMI) idDc={emiIdDc} -> {ok}");
 
-                if (!ok) throw new Exception("S01(EMI) FAIL");
+                if (!ok) throw new Exception("s21(EMI) FAIL");
             },
             onSkip: () => r.EmiPlcOk = true,
             onFail: () => r.EmiPlcOk = false);
 
+
+            static string N(string s) => Regex.Replace((s ?? "").ToLowerInvariant(), @"[^a-z0-9]+", "");
+
+            string expectedFw = (expected ?? "").Trim();
+            string actualFw = (r.FirmwareNew ?? r.FirmwareOld ?? "").Trim();
+
+            bool fwOk = string.IsNullOrWhiteSpace(expectedFw)
+                        || (!string.IsNullOrWhiteSpace(actualFw) &&
+                            (N(actualFw).Contains(N(expectedFw)) || N(expectedFw).Contains(N(actualFw))));
+
+            r.ConformidadeFinal = r.ConfigUploaded && r.AnalogOk && r.EmiPlcOk && fwOk;
 
             // 10) Report
             await RunStepAsync(10, "Adicionar ao report", ct, async () =>
@@ -291,16 +302,6 @@ namespace Recondicionamento_DTC_Routers.Workflow
                 await _log.LogAsync("Report atualizado.");
             });
 
-            static string N(string s) => Regex.Replace((s ?? "").ToLowerInvariant(), @"[^a-z0-9]+", "");
-
-            string expectedFw = (expected ?? "").Trim();
-            string actualFw = (r.FirmwareNew ?? r.FirmwareOld ?? "").Trim();
-
-            bool fwOk = string.IsNullOrWhiteSpace(expectedFw)
-                        || (!string.IsNullOrWhiteSpace(actualFw) &&
-                            (N(actualFw).Contains(N(expectedFw)) || N(expectedFw).Contains(N(actualFw))));
-
-            r.ConformidadeFinal = r.ConfigUploaded && r.AnalogOk && r.EmiPlcOk && fwOk;
 
             await _log.LogAsync($"=== FIM WORKFLOW DTC | Conformidade: {(r.ConformidadeFinal ? "CONFORME" : "NÃO CONFORME")} ===");
             return r;
@@ -372,7 +373,7 @@ namespace Recondicionamento_DTC_Routers.Workflow
         }
 
 
-        private static string FixDtcIdForS01(string fabricante, string dtcId)
+        private static string FixDtcIdFors21(string fabricante, string dtcId)
         {
             if (string.IsNullOrWhiteSpace(dtcId)) return "";
 

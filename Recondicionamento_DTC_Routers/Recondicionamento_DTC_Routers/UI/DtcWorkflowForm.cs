@@ -280,8 +280,8 @@ namespace Recondicionamento_DTC_Routers.UI
 
                 // ⬇️ tudo a seguir sobe +1
                 new StepVm(7,  "Upload configurações (E-REDES)"),
-                new StepVm(8,  "S01 DTC: Tensões/Correntes (WS)"),
-                new StepVm(9,  "S01 EMI PLC: Instantâneos (WS)"),
+                new StepVm(8,  "s21 DTC: Tensões/Correntes (WS)"),
+                new StepVm(9,  "s21 EMI PLC: Instantâneos (WS)"),
                 new StepVm(10, "Adicionar ao report"),
             };
 
@@ -447,12 +447,12 @@ namespace Recondicionamento_DTC_Routers.UI
                     throw new StepSkippedException($"Upload config: fabricante '{fab}' não suportado (SKIP).");
                 },
 
-                // ✅ S01 DTC: usa IdDC do DTC (prefixado por fabricante do DTC)
+                // ✅ s21 DTC: usa IdDC do DTC (prefixado por fabricante do DTC)
                 TestAnalogInputsAsync = async (fab, idDtc, ct) =>
                 {
                     // 1) validar que temos ID do DTC
                     if (string.IsNullOrWhiteSpace(idDtc))
-                        throw new Exception("S01(DTC): idDtc está vazio (step 3 falhou / não leu ID).");
+                        throw new Exception("s21(DTC): idDtc está vazio (step 3 falhou / não leu ID).");
 
                     // 2) construir ID com prefixo (CIR/ZIV/...)
                     string idDcDtc = BuildPrefixedIdDc(fab, idDtc);
@@ -460,7 +460,7 @@ namespace Recondicionamento_DTC_Routers.UI
                     // 3) aqui é o ponto crítico:
                     //    para o DTC, IdMeters = IdDC = id do DTC prefixado
                     var (okHttp, xml) = await RunWsDcRequestAsync(
-                        idRpt: "S01",
+                        idRpt: "s21",
                         idDcRaw: idDcDtc,
                         ct: ct,
                         idMetersOverride: idDcDtc
@@ -470,17 +470,17 @@ namespace Recondicionamento_DTC_Routers.UI
                     if (preview.Length > 3000) preview = preview.Substring(0, 3000) + "\n...\n(TRUNCADO)";
 
                     bool userOk = AskYesNoLocal(
-                        "S01 - Valores Instantâneos (DTC)",
+                        "s21 - Valores Instantâneos (DTC)",
                         $"IdMeters: {idDcDtc}\nIdDC: {idDcDtc}\nHTTP: {(okHttp ? "OK" : "FAIL")}\n\nXML:\n\n{preview}\n\nEstá coerente?",
                         defaultYes: okHttp);
 
-                    await _logger.LogAsync($"S01(DTC) idMeters={idDcDtc} idDc={idDcDtc} httpOk={okHttp} userOk={userOk}", toFile: true);
+                    await _logger.LogAsync($"s21(DTC) idMeters={idDcDtc} idDc={idDcDtc} httpOk={okHttp} userOk={userOk}", toFile: true);
                     return okHttp && userOk;
                 },
 
 
 
-                // ✅ S01 EMI: usa IdDC do EMI vindo do config (podes já vir "CIR123" ou "123")
+                // ✅ s21 EMI: usa IdDC do EMI vindo do config (podes já vir "CIR123" ou "123")
                 TestEmiPlcAsync = async (fab, _ignored, ct) =>
                 {
                     string emiIdRaw = TryGetEmiIdDc();
@@ -488,18 +488,18 @@ namespace Recondicionamento_DTC_Routers.UI
                     if (string.IsNullOrWhiteSpace(emiIdRaw))
                     {
                         bool userOk = AskYesNoLocal(
-                            "S01 - Valores Instantâneos (EMI PLC)",
+                            "s21 - Valores Instantâneos (EMI PLC)",
                             "emiPlcIdDc não está definido na configuração.\n\nQueres marcar este passo como OK (manual)?",
                             defaultYes: true);
 
-                        await _logger.LogAsync($"S01(EMI) sem emiPlcIdDc -> userOk={userOk}", toFile: true);
+                        await _logger.LogAsync($"s21(EMI) sem emiPlcIdDc -> userOk={userOk}", toFile: true);
                         return userOk; // <-- garante popup SEMPRE
                     }
 
                     string emiIdDc = BuildPrefixedIdDc("CIRCUTOR", emiIdRaw); // ou "ZIV" conforme o caso
 
                     var (okHttp, xml) = await RunWsDcRequestAsync(
-                        idRpt: "S01",
+                        idRpt: "s21",
                         idDcRaw: emiIdDc,
                         ct: ct,
                         idMetersOverride: (Configuration.configurationValues.ns_emi ?? "").Trim()
@@ -509,11 +509,11 @@ namespace Recondicionamento_DTC_Routers.UI
                     if (preview.Length > 3000) preview = preview.Substring(0, 3000) + "\n...\n(TRUNCADO)";
 
                     bool userOk2 = AskYesNoLocal(
-                        "S01 - Valores Instantâneos (EMI PLC)",
+                        "s21 - Valores Instantâneos (EMI PLC)",
                         $"IdMeters: {Configuration.configurationValues.ns_emi}\nIdDC: {emiIdDc}\nHTTP: {(okHttp ? "OK" : "FAIL")}\n\nXML:\n\n{preview}\n\nEstá coerente?",
                         defaultYes: okHttp);
 
-                    await _logger.LogAsync($"S01(EMI) idMeters={Configuration.configurationValues.ns_emi} idDc={emiIdDc} httpOk={okHttp} userOk={userOk2}", toFile: true);
+                    await _logger.LogAsync($"s21(EMI) idMeters={Configuration.configurationValues.ns_emi} idDc={emiIdDc} httpOk={okHttp} userOk={userOk2}", toFile: true);
                     return okHttp && userOk2;
                 },
 
@@ -1150,6 +1150,8 @@ namespace Recondicionamento_DTC_Routers.UI
             if (string.IsNullOrWhiteSpace(firmwarePath))
                 throw new ArgumentException(nameof(firmwarePath));
 
+            firmwarePath = Path.GetFullPath(firmwarePath);
+
             if (!File.Exists(firmwarePath))
                 throw new FileNotFoundException("Firmware ZIV DTC não encontrado.", firmwarePath);
 
@@ -1161,85 +1163,233 @@ namespace Recondicionamento_DTC_Routers.UI
             options.AddArgument("--disable-gpu");
             options.AddArgument("--no-sandbox");
 
-            await Task.Run(async () =>
+            string ip = Configuration.configurationValues.ip;
+            int port = ParsePortOrDefault(Configuration.configurationValues.dtcPort, 80);
+            string baseUrl = $"http://{ip}:{port}/";
+
+            await _logger.LogAsync($"[ZIV DTC] Upgrade start | file='{firmwarePath}' | url={baseUrl}", toFile: true);
+
+            await Task.Run(() =>
             {
                 using var driver = new ChromeDriver(service, options);
-                var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(25));
+                var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
 
-                string baseUrl = $"http://{Configuration.configurationValues.ip}:{ParsePortOrDefault(Configuration.configurationValues.dtcPort, 80)}/";
                 driver.Navigate().GoToUrl(baseUrl);
 
+                // Login (se necessário)
                 TryLoginIfNeeded(driver, wait,
                     user: Configuration.configurationValues.dtcUser,
                     pass: Configuration.configurationValues.dtcPass);
 
-                NavigateToFirmwareUpdate_Ziv(driver, wait);
+                // Ir para a página onde existem os iframes do Reflash
+                NavigateToReflashRoot_Ziv(driver, wait);
 
-                var fileInput = wait.Until(d =>
+                // Procurar o iframe de upload (src contém /reflash/reflash_upload/)
+                IWebElement uploadFrame = wait.Until(d =>
                 {
-                    var el = TryFind(d, By.CssSelector("input[type='file']"));
-                    return el != null && el.Displayed && el.Enabled ? el : null;
+                    try
+                    {
+                        // tenta por src
+                        var fr = TryFind(d, By.CssSelector("iframe[src*='/reflash/reflash_upload']"));
+                        if (fr != null) return fr;
+
+                        // fallback: qualquer iframe cujo src contenha reflash_upload
+                        var frames = d.FindElements(By.TagName("iframe"));
+                        foreach (var f in frames)
+                        {
+                            var src = (f.GetAttribute("src") ?? "");
+                            if (src.IndexOf("reflash_upload", StringComparison.OrdinalIgnoreCase) >= 0)
+                                return f;
+                        }
+                        return null;
+                    }
+                    catch { return null; }
                 });
 
+                if (uploadFrame == null)
+                    throw new Exception("[ZIV DTC] Não encontrei iframe de upload (/reflash/reflash_upload/).");
+
+                // Entrar no iframe do upload
+                driver.SwitchTo().Frame(uploadFrame);
+
+                // Encontrar input file
+                var fileInput = wait.Until(d =>
+                {
+                    try
+                    {
+                        var el = d.FindElement(By.CssSelector("input[type='file']"));
+                        return el;
+                    }
+                    catch { return null; }
+                });
+
+                if (fileInput == null)
+                    throw new Exception("[ZIV DTC] Reflash(upload): não encontrei input[type=file].");
+
+                // Selecionar ficheiro (equivalente a "Escolher ficheiro")
                 fileInput.SendKeys(firmwarePath);
 
-                var submit = wait.Until(d =>
-                    TryFind(d, By.XPath("//input[@type='submit' and (contains(@value,'Upload') or contains(@value,'Update') or contains(@value,'Upgrade') or contains(@value,'Send'))]")) ??
-                    TryFind(d, By.XPath("//button[contains(.,'Upload') or contains(.,'Update') or contains(.,'Upgrade') or contains(.,'Send')]")) ??
-                    TryFind(d, By.CssSelector("input[type='submit'], button[type='submit']"))
-                );
+                // Confirmar que ficou preenchido
+                string picked = "";
+                try { picked = (fileInput.GetAttribute("value") ?? "").Trim(); } catch { }
 
-                try { submit.Click(); }
-                catch { ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", submit); }
+                if (string.IsNullOrWhiteSpace(picked))
+                    throw new Exception("[ZIV DTC] Reflash(upload): input[type=file] ficou vazio após SendKeys (não selecionou ficheiro).");
 
-                await Task.Delay(TimeSpan.FromSeconds(5), ct);
+                // Garantir checkbox "Only verify" desmarcada (se existir)
+                try
+                {
+                    var onlyVerify = TryFind(driver, By.CssSelector("input[type='checkbox']"));
+                    if (onlyVerify != null && onlyVerify.Enabled && onlyVerify.Selected)
+                        SafeClick(driver, onlyVerify);
+                }
+                catch { /* ignore */ }
+
+                // Clicar botão Reflash (normalmente é input submit/button com value "Reflash")
+                var reflashBtn = wait.Until(d =>
+                {
+                    return
+                        TryFind(d, By.XPath("//input[@type='submit' and contains(translate(@value,'REFLASH','reflash'),'reflash')]")) ??
+                        TryFind(d, By.XPath("//input[@type='button' and contains(translate(@value,'REFLASH','reflash'),'reflash')]")) ??
+                        TryFind(d, By.XPath("//button[contains(.,'Reflash')]"));
+                });
+
+                if (reflashBtn == null)
+                    throw new Exception("[ZIV DTC] Reflash(upload): não encontrei botão 'Reflash'.");
+
+                SafeClick(driver, reflashBtn);
+
+                // Voltar ao default content
+                driver.SwitchTo().DefaultContent();
+
+                // Opcional: ler um preview do status iframe e logar (não falha se não existir)
+                try
+                {
+                    var statusFrame =
+                        TryFind(driver, By.CssSelector("iframe#statusdiv")) ??
+                        TryFind(driver, By.CssSelector("iframe[src*='/reflash/reflash_status']"));
+
+                    if (statusFrame != null)
+                    {
+                        driver.SwitchTo().Frame(statusFrame);
+                        var txt = "";
+                        try { txt = (driver.FindElement(By.TagName("body"))?.Text ?? "").Trim(); } catch { }
+                        driver.SwitchTo().DefaultContent();
+
+                        if (!string.IsNullOrWhiteSpace(txt))
+                        {
+                            if (txt.Length > 700) txt = txt.Substring(0, 700) + "\n...(TRUNCADO)";
+                            _ = _logger.LogAsync($"[ZIV DTC] Reflash status (preview):\n{txt}", toFile: true);
+                        }
+                    }
+                }
+                catch { }
 
             }, ct);
 
-            await _logger.LogAsync($"[ZIV DTC] Firmware enviado: {Path.GetFileName(firmwarePath)}", toFile: true);
+            await _logger.LogAsync($"[ZIV DTC] Reflash submetido (upload+click). Aguardar ~90s...", toFile: true);
 
-            string upUrl = $"http://{Configuration.configurationValues.ip}:{ParsePortOrDefault(Configuration.configurationValues.dtcPort, 80)}/";
+            // tal como no Circutor: dá tempo para começar a aplicar / reboot
+            await Task.Delay(TimeSpan.FromSeconds(90), ct);
+
             await _logger.LogAsync("[ZIV DTC] A aguardar reboot/HTTP up...", toFile: true);
-            await WaitHttpUpAsync(upUrl, timeoutSeconds: 600, ct);
+            await WaitHttpUpAsync(baseUrl, timeoutSeconds: 600, ct);
             await _logger.LogAsync("[ZIV DTC] HTTP up após upgrade.", toFile: true);
         }
 
-        private static void NavigateToFirmwareUpdate_Ziv(IWebDriver driver, WebDriverWait wait)
+        // ---------------- helpers mínimos ----------------
+
+        private static void NavigateToReflashRoot_Ziv(IWebDriver driver, WebDriverWait wait)
         {
-            wait.Until(d => d.PageSource.Length > 2000);
+            // Se já estiver na página com os iframes, ok
+            wait.Until(d => d.PageSource.Length > 1500);
 
-            IWebElement link =
-                TryFind(driver, By.LinkText("Firmware")) ??
-                TryFind(driver, By.XPath("//a[normalize-space()='Firmware']")) ??
-                TryFind(driver, By.XPath("//a[contains(.,'Firmware')]")) ??
-                TryFind(driver, By.LinkText("Update")) ??
-                TryFind(driver, By.XPath("//a[normalize-space()='Update']")) ??
-                TryFind(driver, By.XPath("//a[contains(.,'Update')]")) ??
-                TryFind(driver, By.XPath("//a[contains(.,'Upgrade')]")) ??
-                TryFind(driver, By.XPath("//a[contains(.,'Software')]"));
+            // tenta clicar no menu "Reflash"
+            var reflashLink =
+                TryFind(driver, By.XPath("//a[contains(.,'Reflash')]")) ??
+                TryFind(driver, By.CssSelector("a[href*='/actions/reflash']"));
 
-            if (link != null)
+            if (reflashLink != null)
             {
-                try { link.Click(); }
-                catch { ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", link); }
-                wait.Until(d => d.PageSource.Length > 2000);
+                SafeClick(driver, reflashLink);
+                wait.Until(d => (d.PageSource ?? "").IndexOf("reflash_upload", StringComparison.OrdinalIgnoreCase) >= 0);
+                return;
             }
 
-            var iframes = driver.FindElements(By.TagName("iframe"));
-            foreach (var fr in iframes)
+            // fallback: ir direto ao endpoint
+            driver.Navigate().GoToUrl(new Uri(new Uri(driver.Url), "/actions/reflash/").ToString());
+            wait.Until(d => (d.PageSource ?? "").IndexOf("reflash_upload", StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+      
+
+        private static void SafeClick(IWebDriver driver, IWebElement el)
+        {
+            if (el == null) return;
+
+            try { el.Click(); }
+            catch
+            {
+                try { ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", el); }
+                catch
+                {
+                    try { el.SendKeys(OpenQA.Selenium.Keys.Enter); }
+                    catch { }
+                }
+            }
+        }
+
+
+        private static void ForceFileInputVisible(IWebDriver driver, IWebElement fileInput)
+        {
+            try
+            {
+                ((IJavaScriptExecutor)driver).ExecuteScript(@"
+arguments[0].style.display='block';
+arguments[0].style.visibility='visible';
+arguments[0].style.opacity=1;
+arguments[0].style.height='30px';
+arguments[0].style.width='420px';
+arguments[0].removeAttribute('hidden');
+arguments[0].removeAttribute('disabled');
+", fileInput);
+            }
+            catch { }
+        }
+
+        private static string SafeBodyText(IWebDriver driver)
+        {
+            try { return driver.FindElement(By.TagName("body"))?.Text ?? ""; }
+            catch { return ""; }
+        }
+
+        private static bool ContainsAny(string text, params string[] needles)
+        {
+            var up = (text ?? "").ToUpperInvariant();
+            foreach (var n in needles)
+                if (!string.IsNullOrWhiteSpace(n) && up.Contains(n.ToUpperInvariant()))
+                    return true;
+            return false;
+        }
+
+        private static void TryAcceptAlert(IWebDriver driver, int timeoutSeconds)
+        {
+            var end = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+            while (DateTime.UtcNow < end)
             {
                 try
                 {
-                    driver.SwitchTo().DefaultContent();
-                    driver.SwitchTo().Frame(fr);
-                    var file = TryFind(driver, By.CssSelector("input[type='file']"));
-                    if (file != null)
-                        return;
+                    var a = driver.SwitchTo().Alert();
+                    a.Accept();
+                    return;
                 }
-                catch { }
+                catch { Thread.Sleep(150); }
             }
-            driver.SwitchTo().DefaultContent();
         }
+
+
+
+
 
         private string ResolveDtcFirmwarePath(string relativePathUnderRoot)
         {
